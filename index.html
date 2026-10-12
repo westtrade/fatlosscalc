@@ -1,0 +1,3760 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Хочешь избавиться от жира? — Калькулятор</title>
+
+    <!-- Стили и скрипты подключены локально: страница работает без интернета.
+         Tailwind собран заранее в assets/css/tailwind.css (см. README-ASSETS). -->
+    <link rel="stylesheet" href="assets/css/tailwind.css" />
+    <link rel="stylesheet" href="assets/css/fonts.css" />
+
+    <script defer src="assets/vendor/alpine-collapse.min.js"></script>
+    <script defer src="assets/vendor/alpine.min.js"></script>
+
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background-color: #070b09;
+        background-image:
+          radial-gradient(
+            900px 600px at 12% -8%,
+            rgba(61, 245, 176, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 520px at 92% 4%,
+            rgba(198, 255, 61, 0.12),
+            transparent 62%
+          ),
+          radial-gradient(
+            700px 700px at 50% 110%,
+            rgba(89, 199, 255, 0.08),
+            transparent 60%
+          );
+        background-attachment: fixed;
+      }
+      .grain::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.035;
+        z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          var(--tr-accent, #c6ff3d) 0%,
+          var(--tr-accent, #c6ff3d) var(--pct, 50%),
+          #1b2a23 var(--pct, 50%),
+          #1b2a23 100%
+        );
+      }
+      input[type="range"]::-moz-range-track {
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          var(--tr-accent, #c6ff3d) 0%,
+          var(--tr-accent, #c6ff3d) var(--pct, 50%),
+          #1b2a23 var(--pct, 50%),
+          #1b2a23 100%
+        );
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -8px;
+        height: 24px;
+        width: 24px;
+        border-radius: 999px;
+        background: #0b120f;
+        border: 3px solid var(--tr-accent, #c6ff3d);
+        box-shadow:
+          0 0 0 5px
+            color-mix(in srgb, var(--tr-accent, #c6ff3d) 18%, transparent),
+          0 6px 18px rgba(0, 0, 0, 0.6);
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      input[type="range"]::-moz-range-thumb {
+        height: 20px;
+        width: 20px;
+        border-radius: 999px;
+        background: #0b120f;
+        border: 3px solid var(--tr-accent, #c6ff3d);
+        box-shadow: 0 0 0 5px
+          color-mix(in srgb, var(--tr-accent, #c6ff3d) 18%, transparent);
+      }
+      input[type="range"]:active::-webkit-slider-thumb {
+        transform: scale(1.14);
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+      }
+      .card-hover {
+        transition:
+          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+          border-color 0.35s,
+          box-shadow 0.35s,
+          background-color 0.35s;
+      }
+      .card-hover:hover {
+        transform: translateY(-4px);
+      }
+      .bar {
+        transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .soft {
+        transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes floaty {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-9px);
+        }
+      }
+      .floaty {
+        animation: floaty 7s ease-in-out infinite;
+      }
+      @keyframes pulseRing {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.65;
+        }
+        70% {
+          transform: scale(1.5);
+          opacity: 0;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      .pulse-ring {
+        animation: pulseRing 2.8s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+      }
+      @keyframes riseIn {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .rise {
+        animation: riseIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .toast {
+        animation: toastIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      .dash {
+        transition:
+          stroke-dasharray 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+          stroke-dashoffset 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .stripe {
+        background-image: repeating-linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.045) 0 1px,
+          transparent 1px 9px
+        );
+      }
+      input[type="date"] {
+        color-scheme: dark;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0.5;
+        cursor: pointer;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+      }
+      .plot {
+        transition:
+          d 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.3s ease;
+      }
+      .plot-dot {
+        transition:
+          cx 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+          cy 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      ::selection {
+        background: #c6ff3d;
+        color: #070b09;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #070b09;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e2c26;
+        border-radius: 99px;
+        border: 2px solid #070b09;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #2c4038;
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+    </style>
+  </head>
+
+  <body class="grain font-sans text-slate-200 antialiased min-h-screen">
+    <div x-data="fatCalc()" x-init="init()" x-cloak class="relative z-10">
+      <!-- ============ NAV ============ -->
+      <header
+        class="sticky top-0 z-40 border-b border-line/70 bg-ink/80 backdrop-blur-xl"
+      >
+        <div
+          class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4"
+        >
+          <a href="#top" class="flex items-center gap-2.5 group shrink-0">
+            <span
+              class="relative grid place-items-center h-9 w-9 rounded-xl bg-gradient-to-br from-acid to-mint text-ink shadow-glow"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" />
+              </svg>
+            </span>
+            <span class="leading-none">
+              <span
+                class="block text-[15px] font-extrabold tracking-tight text-white group-hover:text-acid transition-colors"
+                >FATLOSS<span class="text-acid">·</span>CALC</span
+              >
+              <span
+                class="block text-[10px] uppercase tracking-[.22em] text-slate-500 mt-0.5"
+                >протокол дефицита</span
+              >
+            </span>
+          </a>
+
+          <nav
+            class="hidden md:flex items-center gap-0.5 lg:gap-1 text-[12.5px] lg:text-[13px] font-semibold text-slate-400"
+          >
+            <a
+              href="#calc"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >Расчёт</a
+            >
+            <a
+              href="#result"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >Результат</a
+            >
+            <a
+              href="#bmi"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >ИМТ</a
+            >
+            <a
+              href="#tracker"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >Дневник</a
+            >
+            <a
+              href="#formula"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >Формулы</a
+            >
+            <a
+              href="#plan"
+              class="px-2 lg:px-3 py-2 rounded-lg whitespace-nowrap hover:text-white hover:bg-white/5 transition"
+              >План дня</a
+            >
+          </nav>
+
+          <button
+            @click="copyResult()"
+            class="hidden lg:inline-flex shrink-0 items-center gap-2 rounded-xl bg-white/5 border border-line px-3.5 py-2 text-[13px] font-bold text-slate-200 hover:border-acid/50 hover:text-acid hover:bg-acid/5 transition"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="9" y="9" width="12" height="12" rx="2" />
+              <path
+                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+              />
+            </svg>
+            Копировать
+          </button>
+        </div>
+      </header>
+
+      <!-- ============ HERO ============ -->
+      <section id="top" class="relative overflow-hidden">
+        <div
+          class="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-mint/10 blur-[130px] floaty"
+        ></div>
+        <div
+          class="absolute -top-24 right-0 w-[460px] h-[460px] rounded-full bg-acid/10 blur-[130px] floaty"
+          style="animation-delay: -3.5s"
+        ></div>
+
+        <div
+          class="max-w-6xl mx-auto px-5 pt-16 pb-10 md:pt-24 md:pb-14 grid lg:grid-cols-[1.15fr_.85fr] gap-12 items-center"
+        >
+          <div class="rise">
+            <div
+              class="inline-flex items-center gap-2 rounded-full border border-acid/25 bg-acid/[.07] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[.18em] text-acid mb-6"
+            >
+              <span class="relative flex h-2 w-2">
+                <span
+                  class="pulse-ring absolute inline-flex h-full w-full rounded-full bg-acid"
+                ></span>
+                <span
+                  class="relative inline-flex rounded-full h-2 w-2 bg-acid"
+                ></span>
+              </span>
+              цель вручную или по ИМТ 21,7
+            </div>
+
+            <h1
+              class="text-[clamp(2.4rem,7vw,4.4rem)] leading-[.95] font-extrabold tracking-[-.035em] text-white"
+            >
+              Хотите<br />избавиться<br />
+              <span class="relative inline-block">
+                <span
+                  class="bg-gradient-to-r from-acid via-mint to-sky bg-clip-text text-transparent"
+                  >от жира?</span
+                >
+                <svg
+                  class="absolute -bottom-2 left-0 w-full"
+                  height="12"
+                  viewBox="0 0 300 12"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M2 8C60 3 120 2 180 5C225 7.5 265 8 298 4"
+                    stroke="url(#ug)"
+                    stroke-width="3.5"
+                    fill="none"
+                    stroke-linecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="ug" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0" stop-color="#C6FF3D" />
+                      <stop offset="1" stop-color="#3DF5B0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </span>
+            </h1>
+
+            <p
+              class="mt-8 max-w-lg text-[15px] md:text-base leading-relaxed text-slate-400"
+            >
+              Задайте целевой вес сами — или введите рост, и калькулятор сам
+              определит цель по середине нормы ИМТ (18,5–24,9 → 21,7). Дальше
+              пять простых умножений дают готовый план по калориям, белкам,
+              жирам, углеводам и клетчатке.
+            </p>
+
+            <div class="mt-8 flex flex-wrap items-center gap-3">
+              <a
+                href="#calc"
+                class="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-acid to-mint px-6 py-3.5 text-[15px] font-extrabold text-ink shadow-glow hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Рассчитать мой план
+                <svg
+                  viewBox="0 0 24 24"
+                  class="w-4 h-4 transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+              <a
+                href="#bmi"
+                class="inline-flex items-center gap-2 rounded-2xl border border-line bg-white/[.03] px-6 py-3.5 text-[15px] font-bold text-slate-300 hover:border-mint/40 hover:text-mint transition"
+              >
+                Что такое ИМТ
+              </a>
+            </div>
+
+            <div class="mt-10 grid grid-cols-3 gap-3 max-w-md">
+              <template
+                x-for="s in [{v:'×25',l:'дефицит'},{v:'×2',l:'белок'},{v:'21,7',l:'ИМТ-цель'}]"
+                :key="s.l"
+              >
+                <div
+                  class="rounded-xl border border-line bg-panel/70 px-3 py-2.5 text-center"
+                >
+                  <div
+                    class="num text-lg font-extrabold text-white"
+                    x-text="s.v"
+                  ></div>
+                  <div
+                    class="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5"
+                    x-text="s.l"
+                  ></div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div
+            class="relative rise hidden lg:block"
+            style="animation-delay: 0.15s"
+          >
+            <div class="relative aspect-square max-w-[430px] mx-auto">
+              <div
+                class="absolute inset-0 rounded-full bg-gradient-to-br from-mint/20 via-transparent to-acid/20 blur-2xl"
+              ></div>
+              <svg viewBox="0 0 400 400" class="relative w-full h-full">
+                <defs>
+                  <linearGradient id="ringA" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#C6FF3D" />
+                    <stop offset="1" stop-color="#3DF5B0" />
+                  </linearGradient>
+                  <linearGradient id="ringB" x1="1" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#59C7FF" />
+                    <stop offset="1" stop-color="#3DF5B0" />
+                  </linearGradient>
+                  <radialGradient id="core" cx="50%" cy="35%">
+                    <stop offset="0" stop-color="#16241E" />
+                    <stop offset="1" stop-color="#0A110E" />
+                  </radialGradient>
+                </defs>
+                <circle
+                  cx="200"
+                  cy="200"
+                  r="188"
+                  fill="none"
+                  stroke="#1E2C26"
+                  stroke-width="1"
+                />
+                <circle
+                  cx="200"
+                  cy="200"
+                  r="160"
+                  fill="none"
+                  stroke="#1E2C26"
+                  stroke-width="1"
+                  stroke-dasharray="3 9"
+                />
+                <circle
+                  cx="200"
+                  cy="200"
+                  r="126"
+                  fill="url(#core)"
+                  stroke="#22332B"
+                  stroke-width="1.5"
+                />
+                <g
+                  :style="`transform:rotate(${spin}deg);transform-origin:200px 200px`"
+                >
+                  <circle
+                    cx="200"
+                    cy="200"
+                    r="172"
+                    fill="none"
+                    stroke="url(#ringA)"
+                    stroke-width="6"
+                    stroke-linecap="round"
+                    stroke-dasharray="270 812"
+                    opacity=".9"
+                  />
+                </g>
+                <g
+                  :style="`transform:rotate(${-spin*0.6}deg);transform-origin:200px 200px`"
+                >
+                  <circle
+                    cx="200"
+                    cy="200"
+                    r="146"
+                    fill="none"
+                    stroke="url(#ringB)"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-dasharray="90 824"
+                    opacity=".75"
+                  />
+                </g>
+                <text
+                  x="200"
+                  y="176"
+                  text-anchor="middle"
+                  fill="#64748B"
+                  font-size="12"
+                  font-family="Manrope"
+                  font-weight="700"
+                  letter-spacing="3"
+                >
+                  ВАША НОРМА
+                </text>
+                <text
+                  x="200"
+                  y="228"
+                  text-anchor="middle"
+                  fill="#FFFFFF"
+                  font-size="52"
+                  font-family="Manrope"
+                  font-weight="800"
+                  letter-spacing="-2"
+                  x-text="valid ? fmt(disp.cal,0) : '—'"
+                ></text>
+                <text
+                  x="200"
+                  y="256"
+                  text-anchor="middle"
+                  fill="#C6FF3D"
+                  font-size="14"
+                  font-family="Manrope"
+                  font-weight="700"
+                  letter-spacing="4"
+                >
+                  ККАЛ / ДЕНЬ
+                </text>
+              </svg>
+
+              <template x-for="(chip,i) in heroChips" :key="chip.label">
+                <div
+                  class="absolute rounded-xl border border-line bg-panel/90 backdrop-blur px-3 py-2 shadow-card floaty"
+                  :style="`top:${chip.top};left:${chip.left};animation-delay:${-i*1.6}s`"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="h-2 w-2 rounded-full"
+                      :style="`background:${chip.color}`"
+                    ></span>
+                    <span
+                      class="text-[11px] font-semibold text-slate-400"
+                      x-text="chip.label"
+                    ></span>
+                    <span
+                      class="num text-[13px] font-extrabold text-white"
+                      x-text="valid ? fmt(chip.get(), chip.dec ?? 0) : '—'"
+                    ></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CALC + RESULT ============ -->
+      <main id="calc" class="max-w-6xl mx-auto px-5 pb-8">
+        <div class="grid lg:grid-cols-[410px_1fr] gap-6 items-start">
+          <!-- ---------- INPUT PANEL ---------- -->
+          <aside
+            class="lg:sticky lg:top-24 rounded-3xl border border-line bg-panel/80 backdrop-blur-xl p-6 md:p-7 shadow-card"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-lg font-extrabold text-white tracking-tight">
+                  Ваши данные
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">
+                  Двигайте ползунки — всё считается мгновенно
+                </p>
+              </div>
+              <span
+                class="grid place-items-center h-10 w-10 rounded-xl bg-acid/10 border border-acid/20 text-acid"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M4 4h16v16H4z" />
+                  <path
+                    d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h4"
+                  />
+                </svg>
+              </span>
+            </div>
+
+            <!-- current weight -->
+            <div class="mb-6">
+              <div class="flex items-end justify-between mb-3">
+                <label for="cw" class="text-[13px] font-bold text-slate-300"
+                  >Текущий вес</label
+                >
+                <div
+                  class="flex items-center gap-1.5 rounded-xl border border-line bg-ink px-2.5 py-1.5 focus-within:border-acid/60 transition"
+                >
+                  <input
+                    id="cw"
+                    type="number"
+                    min="30"
+                    max="250"
+                    step="0.5"
+                    x-model.number="cw"
+                    class="num w-16 bg-transparent text-right text-lg font-extrabold text-white outline-none placeholder:text-slate-600"
+                    placeholder="0"
+                  />
+                  <span class="text-xs font-bold text-slate-500 pb-0.5"
+                    >кг</span
+                  >
+                </div>
+              </div>
+              <input
+                type="range"
+                min="30"
+                max="250"
+                step="0.5"
+                x-model.number="cw"
+                :style="`--pct:${pct(cw,30,250)}%;--tr-accent:#C6FF3D`"
+                aria-label="Текущий вес"
+              />
+              <div
+                class="flex justify-between mt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600"
+              >
+                <span>30 кг</span><span>250 кг</span>
+              </div>
+            </div>
+
+            <!-- ===== MODE SWITCH ===== -->
+            <div class="mb-5">
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[13px] font-bold text-slate-300"
+                  >Как задать цель?</span
+                >
+                <span
+                  class="text-[10px] font-extrabold uppercase tracking-[.16em] px-2 py-0.5 rounded-md"
+                  :class="mode==='bmi' ? 'bg-mint/15 text-mint' : 'bg-acid/15 text-acid'"
+                  x-text="mode==='bmi' ? 'авторасчёт' : 'вручную'"
+                ></span>
+              </div>
+
+              <div
+                class="relative grid grid-cols-2 rounded-xl border border-line bg-ink p-1 select-none"
+              >
+                <div
+                  class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg bg-gradient-to-r from-acid to-mint soft shadow-glow"
+                  :style="`transform:translateX(${mode==='bmi' ? '100%' : '0%'})`"
+                ></div>
+                <button
+                  type="button"
+                  @click="setMode('manual')"
+                  class="relative z-10 py-2 text-[12.5px] font-extrabold transition-colors duration-300"
+                  :class="mode==='manual' ? 'text-ink' : 'text-slate-400 hover:text-white'"
+                >
+                  Свой целевой вес
+                </button>
+                <button
+                  type="button"
+                  @click="setMode('bmi')"
+                  class="relative z-10 py-2 text-[12.5px] font-extrabold transition-colors duration-300"
+                  :class="mode==='bmi' ? 'text-ink' : 'text-slate-400 hover:text-white'"
+                >
+                  По ИМТ + рост
+                </button>
+              </div>
+            </div>
+
+            <!-- ===== MANUAL TARGET ===== -->
+            <div x-show="mode==='manual'" x-collapse.duration.350ms>
+              <div class="mb-6">
+                <div class="flex items-end justify-between mb-3">
+                  <label for="tw" class="text-[13px] font-bold text-slate-300"
+                    >Вес, к которому стремитесь</label
+                  >
+                  <div
+                    class="flex items-center gap-1.5 rounded-xl border border-line bg-ink px-2.5 py-1.5 focus-within:border-mint/60 transition"
+                  >
+                    <input
+                      id="tw"
+                      type="number"
+                      min="30"
+                      max="250"
+                      step="0.5"
+                      x-model.number="tw"
+                      class="num w-16 bg-transparent text-right text-lg font-extrabold text-white outline-none placeholder:text-slate-600"
+                      placeholder="0"
+                    />
+                    <span class="text-xs font-bold text-slate-500 pb-0.5"
+                      >кг</span
+                    >
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="30"
+                  max="250"
+                  step="0.5"
+                  x-model.number="tw"
+                  :style="`--pct:${pct(tw,30,250)}%;--tr-accent:#3DF5B0`"
+                  aria-label="Целевой вес"
+                />
+                <div
+                  class="flex justify-between mt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600"
+                >
+                  <span>30 кг</span><span>250 кг</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== BMI / HEIGHT ===== -->
+            <div x-show="mode==='bmi'" x-collapse.duration.350ms>
+              <div class="mb-5">
+                <div class="flex items-end justify-between mb-3">
+                  <label for="ht" class="text-[13px] font-bold text-slate-300"
+                    >Ваш рост</label
+                  >
+                  <div
+                    class="flex items-center gap-1.5 rounded-xl border border-line bg-ink px-2.5 py-1.5 focus-within:border-mint/60 transition"
+                  >
+                    <input
+                      id="ht"
+                      type="number"
+                      min="120"
+                      max="230"
+                      step="1"
+                      x-model.number="height"
+                      class="num w-16 bg-transparent text-right text-lg font-extrabold text-white outline-none placeholder:text-slate-600"
+                      placeholder="0"
+                    />
+                    <span class="text-xs font-bold text-slate-500 pb-0.5"
+                      >см</span
+                    >
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="120"
+                  max="230"
+                  step="1"
+                  x-model.number="height"
+                  :style="`--pct:${pct(height,120,230)}%;--tr-accent:#3DF5B0`"
+                  aria-label="Рост"
+                />
+                <div
+                  class="flex justify-between mt-2 text-[10px] font-semibold uppercase tracking-widest text-slate-600"
+                >
+                  <span>120 см</span><span>230 см</span>
+                </div>
+              </div>
+
+              <!-- computed target card -->
+              <div
+                class="rounded-2xl border border-mint/25 bg-gradient-to-br from-mint/[.09] to-transparent p-4 mb-6"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <span
+                    class="grid place-items-center h-6 w-6 rounded-md bg-mint/15 text-mint"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </span>
+                  <span
+                    class="text-[10px] font-extrabold uppercase tracking-[.18em] text-mint"
+                    >Расчётная цель по ИМТ 21,7</span
+                  >
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <span
+                    class="num text-4xl font-extrabold text-white tracking-tight"
+                    x-text="valid ? fmt(twEff,1) : '—'"
+                  ></span>
+                  <span class="text-sm font-bold text-slate-400">кг</span>
+                </div>
+                <div
+                  class="mt-3 pt-3 border-t border-mint/15 text-[11.5px] leading-relaxed text-slate-400"
+                >
+                  Коридор нормы
+                  <b class="text-white num" x-text="fmt(bmiWeight(18.5),1)"></b
+                  >–<b
+                    class="text-white num"
+                    x-text="fmt(bmiWeight(24.9),1)"
+                  ></b>
+                  кг для роста
+                  <b class="text-white num" x-text="fmt(n(height),0)"></b> см.
+                  Берём середину — ИМТ <b class="text-mint num">21,7</b>.
+                </div>
+              </div>
+            </div>
+
+            <!-- delta -->
+            <div
+              class="rounded-2xl border border-line bg-ink/60 stripe p-4 mb-5"
+            >
+              <div class="flex items-center justify-between text-[13px]">
+                <span class="text-slate-400 font-semibold">Сбросить нужно</span>
+                <span class="num font-extrabold text-white text-base">
+                  <span x-text="fmt(delta,1)"></span>
+                  <span class="text-xs text-slate-500 font-bold">кг</span>
+                </span>
+              </div>
+              <div class="mt-3 h-2 rounded-full bg-line overflow-hidden">
+                <div
+                  class="bar h-full rounded-full bg-gradient-to-r from-acid to-mint"
+                  :style="`width:${Math.min(100, Math.max(0, delta / Math.max(n(cw),1) * 100))}%`"
+                ></div>
+              </div>
+              <p class="mt-2.5 text-[11px] text-slate-500 leading-relaxed">
+                Безопасный темп —
+                <span class="text-mint font-bold">0,5–1% веса в неделю</span>.
+                <span
+                  x-show="valid && delta > 0"
+                  x-text="`Ваш ориентир: ~${fmt(Math.max(1, Math.round(delta/(n(cw)*0.0075))),0)} недель.`"
+                ></span>
+              </p>
+            </div>
+
+            <div class="flex gap-2.5">
+              <button
+                @click="reset()"
+                class="flex-1 rounded-xl border border-line bg-white/[.03] px-4 py-3 text-[13px] font-bold text-slate-300 hover:border-rose/40 hover:text-rose hover:bg-rose/5 transition"
+              >
+                Сбросить
+              </button>
+              <button
+                @click="copyResult()"
+                class="flex-1 rounded-xl bg-gradient-to-r from-acid to-mint px-4 py-3 text-[13px] font-extrabold text-ink hover:opacity-90 active:scale-[.98] transition shadow-glow"
+              >
+                Скопировать план
+              </button>
+            </div>
+
+            <p
+              class="mt-5 text-[11px] leading-relaxed text-slate-600 border-t border-line pt-4"
+            >
+              Расчёт носит информационный характер и не заменяет консультацию
+              врача или диетолога. ИМТ не учитывает состав тела — у очень
+              мускулистых людей он завышен.
+            </p>
+          </aside>
+
+          <!-- ---------- RESULTS ---------- -->
+          <section id="result" class="space-y-6">
+            <div
+              class="relative overflow-hidden rounded-3xl border border-acid/25 bg-gradient-to-br from-panel2 via-panel to-ink p-6 md:p-8 shadow-glow"
+            >
+              <div
+                class="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-acid/15 blur-[90px]"
+              ></div>
+              <div
+                class="relative flex flex-wrap items-end justify-between gap-6"
+              >
+                <div>
+                  <div
+                    class="inline-flex items-center gap-2 rounded-full border border-acid/25 bg-acid/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.2em] text-acid mb-4"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" />
+                    </svg>
+                    Шаг 1 · Дефицит
+                  </div>
+                  <h3
+                    class="text-[13px] font-bold uppercase tracking-[.18em] text-slate-400"
+                  >
+                    Ваша норма калорий
+                  </h3>
+                  <div class="mt-2 flex items-baseline gap-3">
+                    <span
+                      class="num text-[clamp(3.2rem,11vw,5.6rem)] leading-none font-extrabold tracking-[-.04em] text-white"
+                      x-text="valid ? fmt(disp.cal,0) : '—'"
+                    ></span>
+                    <span class="text-lg font-extrabold text-acid">ккал</span>
+                  </div>
+                  <p
+                    class="mt-3 max-w-md text-[13px] leading-relaxed text-slate-400"
+                  >
+                    Текущий вес
+                    <span
+                      class="num font-bold text-white"
+                      x-text="fmt(n(cw),1)"
+                    ></span>
+                    кг × 25 — идеальный дефицит, который запускает жиросжигание
+                    без жёсткого голода.
+                  </p>
+                </div>
+
+                <div
+                  class="rounded-2xl border border-line bg-ink/70 p-4 min-w-[196px]"
+                >
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500 mb-3"
+                  >
+                    Прогноз потери жира
+                  </div>
+                  <template x-for="p in projections" :key="p.label">
+                    <div
+                      class="flex items-center justify-between py-1.5 text-[12px]"
+                    >
+                      <span
+                        class="text-slate-400 font-semibold"
+                        x-text="p.label"
+                      ></span>
+                      <span
+                        class="num font-extrabold text-mint"
+                        x-text="valid ? fmt(p.val,1)+' кг' : '—'"
+                      ></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- macro cards -->
+            <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <template x-for="m in macroCards" :key="m.key">
+                <div
+                  class="card-hover group relative overflow-hidden rounded-2xl border border-line bg-panel/80 p-5 hover:border-current/40"
+                  :style="`color:${m.color}`"
+                >
+                  <div
+                    class="absolute -top-14 -right-14 w-36 h-36 rounded-full blur-3xl opacity-0 group-hover:opacity-25 transition-opacity duration-500"
+                    :style="`background:${m.color}`"
+                  ></div>
+
+                  <div class="relative flex items-start justify-between">
+                    <div
+                      class="grid place-items-center h-10 w-10 rounded-xl border"
+                      :style="`border:${m.color}33;background:${m.color}14`"
+                      x-html="m.icon"
+                    ></div>
+                    <span
+                      class="num text-[10px] font-extrabold uppercase tracking-[.15em] px-2 py-1 rounded-md"
+                      :style="`color:${m.color};background:${m.color}14`"
+                      x-text="m.tag"
+                    ></span>
+                  </div>
+
+                  <div class="relative mt-4">
+                    <div
+                      class="text-[12px] font-bold uppercase tracking-[.14em] text-slate-400"
+                      x-text="m.label"
+                    ></div>
+                    <div class="mt-1.5 flex items-baseline gap-1.5">
+                      <span
+                        class="num text-4xl font-extrabold tracking-tight text-white"
+                        x-text="valid ? fmt(disp[m.key], m.dec) : '—'"
+                      ></span>
+                      <span class="text-sm font-bold text-slate-500">г</span>
+                    </div>
+                  </div>
+
+                  <div
+                    class="relative mt-4 h-1.5 rounded-full bg-line overflow-hidden"
+                  >
+                    <div
+                      class="bar h-full rounded-full"
+                      :style="`width:${valid ? m.share() : 0}%;background:${m.color}`"
+                    ></div>
+                  </div>
+
+                  <div
+                    class="relative mt-3 flex items-center justify-between text-[11px]"
+                  >
+                    <span class="text-slate-500" x-text="m.formula"></span>
+                    <span
+                      class="num font-bold"
+                      :style="`color:${m.color}`"
+                      x-text="valid ? fmt(m.kcal(),0)+' ккал' : ''"
+                    ></span>
+                  </div>
+
+                  <div
+                    class="relative mt-3 text-[11.5px] leading-relaxed text-slate-500 border-t border-line pt-3"
+                    x-text="m.note"
+                  ></div>
+                </div>
+              </template>
+            </div>
+
+            <!-- ===== BMI VISUALIZER ===== -->
+            <div
+              id="bmi"
+              class="rounded-3xl border border-line bg-panel/80 p-6 md:p-7 shadow-card"
+            >
+              <div
+                class="flex flex-wrap items-start justify-between gap-4 mb-7"
+              >
+                <div>
+                  <h3
+                    class="text-[15px] font-extrabold text-white tracking-tight"
+                  >
+                    Шкала индекса массы тела
+                  </h3>
+                  <p class="text-xs text-slate-500 mt-1">
+                    <span x-show="mode==='bmi'"
+                      >Цель берётся из середины зелёной зоны —
+                      <b class="text-mint">ИМТ 21,7</b>.</span
+                    >
+                    <span x-show="mode!=='bmi'"
+                      >Переключитесь на «По ИМТ», чтобы цель рассчиталась
+                      автоматически.</span
+                    >
+                  </p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    @click="setMode(mode==='bmi'?'manual':'bmi')"
+                    class="rounded-xl border px-3.5 py-2 text-[12px] font-extrabold transition"
+                    :class="mode==='bmi' ? 'border-acid/40 bg-acid/10 text-acid' : 'border-line bg-white/[.03] text-slate-300 hover:border-mint/40 hover:text-mint'"
+                  >
+                    <span
+                      x-text="mode==='bmi' ? '✓ Считаю по ИМТ' : 'Считать цель по ИМТ'"
+                    ></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- scale -->
+              <div class="relative pt-8 pb-1">
+                <!-- markers -->
+                <div class="absolute inset-x-0 top-0 h-8">
+                  <!-- current bmi -->
+                  <div
+                    class="absolute top-0 -translate-x-1/2 soft"
+                    :style="`left:${bmiPos(currentBmi)}%`"
+                  >
+                    <div class="flex flex-col items-center">
+                      <span
+                        class="num text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-white text-ink whitespace-nowrap"
+                        x-text="'Вы · '+fmt(currentBmi,1)"
+                      ></span>
+                      <span class="w-px h-3 bg-white/70 mt-0.5"></span>
+                    </div>
+                  </div>
+                  <!-- target bmi 21.7 -->
+                  <div
+                    x-show="mode==='bmi'"
+                    class="absolute top-0 -translate-x-1/2 soft"
+                    :style="`left:${bmiPos(BMI_MID)}%`"
+                  >
+                    <div class="flex flex-col items-center">
+                      <span
+                        class="num text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-mint text-ink whitespace-nowrap"
+                        >Цель · 21,7</span
+                      >
+                      <span class="w-px h-3 bg-mint/70 mt-0.5"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="relative flex h-5 w-full overflow-hidden rounded-full border border-line"
+                >
+                  <template x-for="seg in bmiScale" :key="seg.label">
+                    <div
+                      class="h-full soft"
+                      :style="`width:${(seg.to-seg.from)/(SCALE_MAX-SCALE_MIN)*100}%;background:${seg.color};opacity:${seg.label===currentCat.label?'1':'.32'}`"
+                    ></div>
+                  </template>
+                  <!-- target tick -->
+                  <div
+                    x-show="mode==='bmi'"
+                    class="absolute top-0 bottom-0 w-[2px] bg-ink/80 soft"
+                    :style="`left:${bmiPos(BMI_MID)}%`"
+                  ></div>
+                </div>
+
+                <div class="relative mt-2 h-8">
+                  <template x-for="seg in bmiScale" :key="'l'+seg.label">
+                    <div
+                      class="absolute top-0 -translate-x-1/2 text-center"
+                      :style="`left:${((seg.from+seg.to)/2-SCALE_MIN)/(SCALE_MAX-SCALE_MIN)*100}%`"
+                    >
+                      <div
+                        class="text-[9.5px] font-extrabold uppercase tracking-wider whitespace-nowrap"
+                        :style="`color:${seg.color}`"
+                        x-text="seg.label"
+                      ></div>
+                      <div
+                        class="num text-[9.5px] text-slate-600 font-semibold"
+                        x-text="fmt(seg.from,1).replace('.',',')+'–'+fmt(seg.to,1).replace('.',',')"
+                      ></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- stats -->
+              <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-7">
+                <div class="rounded-2xl border border-line bg-ink/60 p-4">
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"
+                  >
+                    Ваш ИМТ
+                  </div>
+                  <div class="mt-1.5 flex items-baseline gap-2">
+                    <span
+                      class="num text-2xl font-extrabold text-white"
+                      x-text="validBmi ? fmt(currentBmi,1) : '—'"
+                    ></span>
+                    <span
+                      class="text-[11px] font-extrabold"
+                      :style="`color:${currentCat.color}`"
+                      x-text="validBmi ? currentCat.label : ''"
+                    ></span>
+                  </div>
+                  <div class="mt-2 text-[11px] text-slate-500 leading-snug">
+                    вес ÷ рост² =
+                    <span class="num" x-text="fmt(n(cw),1)"></span> ÷
+                    <span
+                      class="num"
+                      x-text="fmt((n(height)/100)**2,2).replace('.',',')"
+                    ></span>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-line bg-ink/60 p-4">
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"
+                  >
+                    Норма (18,5–24,9)
+                  </div>
+                  <div class="mt-1.5 flex items-baseline gap-2">
+                    <span
+                      class="num text-2xl font-extrabold text-white"
+                      x-text="validBmi ? fmt(bmiWeight(18.5),1)+'–'+fmt(bmiWeight(24.9),1) : '—'"
+                    ></span>
+                    <span class="text-[11px] font-bold text-slate-500">кг</span>
+                  </div>
+                  <div class="mt-2 text-[11px] text-slate-500 leading-snug">
+                    для роста
+                    <span
+                      class="num text-slate-300 font-bold"
+                      x-text="fmt(n(height),0)"
+                    ></span>
+                    см
+                  </div>
+                </div>
+
+                <div
+                  class="rounded-2xl border p-4"
+                  :class="mode==='bmi' ? 'border-mint/35 bg-mint/[.07]' : 'border-line bg-ink/60'"
+                >
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-[.16em]"
+                    :class="mode==='bmi' ? 'text-mint' : 'text-slate-500'"
+                  >
+                    Целевой вес
+                  </div>
+                  <div class="mt-1.5 flex items-baseline gap-2">
+                    <span
+                      class="num text-2xl font-extrabold text-white"
+                      x-text="valid ? fmt(twEff,1) : '—'"
+                    ></span>
+                    <span class="text-[11px] font-bold text-slate-500">кг</span>
+                  </div>
+                  <div
+                    class="mt-2 text-[11px] leading-snug"
+                    :class="mode==='bmi' ? 'text-mint/70' : 'text-slate-500'"
+                    x-text="mode==='bmi' ? 'ИМТ 21,7 × рост²' : 'задан вручную'"
+                  ></div>
+                </div>
+
+                <div class="rounded-2xl border border-line bg-ink/60 p-4">
+                  <div
+                    class="text-[10px] font-bold uppercase tracking-[.16em] text-slate-500"
+                  >
+                    До цели
+                  </div>
+                  <div class="mt-1.5 flex items-baseline gap-2">
+                    <span
+                      class="num text-2xl font-extrabold"
+                      :class="delta>0 ? 'text-acid' : 'text-slate-500'"
+                      x-text="valid ? fmt(delta,1) : '—'"
+                    ></span>
+                    <span class="text-[11px] font-bold text-slate-500">кг</span>
+                  </div>
+                  <div class="mt-2 text-[11px] text-slate-500 leading-snug">
+                    <span
+                      x-show="valid && delta>0"
+                      x-text="'≈ '+fmt(Math.max(1,Math.round(delta/(n(cw)*0.0075))),0)+' недель в безопасном темпе'"
+                    ></span>
+                    <span x-show="valid && delta<=0" class="text-slate-500"
+                      >цель уже достигнута</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- donut + bars -->
+            <div class="grid md:grid-cols-2 gap-6">
+              <div
+                class="rounded-3xl border border-line bg-panel/80 p-6 shadow-card"
+              >
+                <h3
+                  class="text-[15px] font-extrabold text-white tracking-tight"
+                >
+                  Баланс калорий по нутриентам
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  Распределение энергии в вашем дне
+                </p>
+                <div
+                  class="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4"
+                >
+                  <div
+                    class="relative shrink-0 w-[168px] h-[168px] mx-auto"
+                  >
+                    <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90">
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        fill="none"
+                        stroke="#1E2C26"
+                        stroke-width="15"
+                      />
+                      <circle
+                        class="dash"
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        fill="none"
+                        :stroke="donut[0].color"
+                        stroke-width="15"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${donut[0].len} ${301.6-donut[0].len}`"
+                        :stroke-dashoffset="donut[0].off"
+                      />
+                      <circle
+                        class="dash"
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        fill="none"
+                        :stroke="donut[1].color"
+                        stroke-width="15"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${donut[1].len} ${301.6-donut[1].len}`"
+                        :stroke-dashoffset="donut[1].off"
+                      />
+                      <circle
+                        class="dash"
+                        cx="60"
+                        cy="60"
+                        r="48"
+                        fill="none"
+                        :stroke="donut[2].color"
+                        stroke-width="15"
+                        stroke-linecap="butt"
+                        :stroke-dasharray="`${donut[2].len} ${301.6-donut[2].len}`"
+                        :stroke-dashoffset="donut[2].off"
+                      />
+                    </svg>
+                    <div
+                      class="absolute inset-0 grid place-content-center text-center"
+                    >
+                      <div
+                        class="num text-2xl font-extrabold text-white"
+                        x-text="valid ? fmt(disp.cal,0) : '—'"
+                      ></div>
+                      <div
+                        class="text-[9px] font-bold uppercase tracking-[.18em] text-slate-500"
+                      >
+                        ккал
+                      </div>
+                    </div>
+                  </div>
+                  <ul class="flex-1 min-w-[124px] space-y-2.5">
+                    <template x-for="seg in donut" :key="seg.key">
+                      <li class="flex items-center gap-3 text-[13px]">
+                        <span
+                          class="h-2.5 w-2.5 rounded-sm shrink-0"
+                          :style="`background:${seg.color}`"
+                        ></span>
+                        <span
+                          class="text-slate-400 font-semibold flex-1 min-w-0 truncate"
+                          x-text="seg.label"
+                        ></span>
+                        <span
+                          class="num font-extrabold text-white shrink-0 tabular-nums"
+                          x-text="valid ? seg.pct+'%' : '—'"
+                        ></span>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+
+              <div
+                class="rounded-3xl border border-line bg-panel/80 p-6 shadow-card"
+              >
+                <h3
+                  class="text-[15px] font-extrabold text-white tracking-tight"
+                >
+                  Грамм в день
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  Визуальное сравнение нутриентов
+                </p>
+                <div class="mt-6 space-y-5">
+                  <template x-for="b in bars" :key="b.label">
+                    <div>
+                      <div class="flex items-baseline justify-between mb-2">
+                        <span
+                          class="text-[12.5px] font-bold text-slate-300"
+                          x-text="b.label"
+                        ></span>
+                        <span class="num text-[13px] font-extrabold text-white">
+                          <span
+                            x-text="valid ? fmt(b.value(), b.dec) : '—'"
+                          ></span>
+                          <span
+                            class="text-[10px] text-slate-500 font-bold ml-0.5"
+                            >г</span
+                          >
+                        </span>
+                      </div>
+                      <div
+                        class="h-3 rounded-full bg-ink border border-line overflow-hidden"
+                      >
+                        <div
+                          class="bar h-full rounded-full"
+                          :style="`width:${valid ? Math.min(100, b.value()/b.max*100) : 0}%;background:linear-gradient(90deg,${b.color},${b.color}99)`"
+                        ></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <template x-if="warnings.length">
+              <div class="space-y-2.5">
+                <template x-for="(w,i) in warnings" :key="i">
+                  <div
+                    class="flex items-start gap-3 rounded-2xl border px-4 py-3 text-[13px] leading-relaxed"
+                    :class="w.level==='warn' ? 'border-ember/30 bg-ember/[.07] text-ember' : 'border-rose/30 bg-rose/[.07] text-rose'"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="w-4 h-4 mt-0.5 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+                      />
+                      <path d="M12 9v4M12 17h.01" />
+                    </svg>
+                    <span x-text="w.text"></span>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </section>
+        </div>
+      </main>
+
+      <!-- ============ WEIGHT TRACKER ============ -->
+      <section id="tracker" class="max-w-6xl mx-auto px-5 py-20">
+        <div class="max-w-2xl mb-10">
+          <span
+            class="text-[11px] font-extrabold uppercase tracking-[.24em] text-mint"
+            >Дневник веса</span
+          >
+          <h2
+            class="mt-3 text-[clamp(1.9rem,4.5vw,2.8rem)] font-extrabold tracking-[-.03em] text-white leading-tight"
+          >
+            Динамика веса и график
+          </h2>
+          <p class="mt-4 text-[15px] leading-relaxed text-slate-400">
+            Записывайте вес — история сохраняется в вашем браузере и никуда не
+            отправляется. График покажет динамику и линию цели.
+          </p>
+        </div>
+
+        <div
+          class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
+        >
+          <!-- ---------- CHART CARD ---------- -->
+          <div
+            class="min-w-0 rounded-3xl border border-line bg-panel/80 p-6 shadow-card"
+          >
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3
+                  class="text-[15px] font-extrabold text-white tracking-tight"
+                >
+                  График изменений
+                </h3>
+                <p
+                  class="text-xs text-slate-500 mt-1"
+                  x-text="history.length ? `Записей: ${history.length}` : 'Пока нет записей'"
+                ></p>
+              </div>
+              <div
+                class="flex items-center gap-4 text-[11px] font-bold text-slate-500"
+              >
+                <span class="flex items-center gap-2">
+                  <span
+                    class="h-[3px] w-5 rounded-full bg-gradient-to-r from-acid to-mint"
+                  ></span
+                  >Вес
+                </span>
+                <span
+                  class="flex items-center gap-2"
+                  x-show="chart.target !== null"
+                >
+                  <span
+                    class="h-0 w-5 border-t-2 border-dashed border-mint"
+                  ></span
+                  >Цель
+                </span>
+              </div>
+            </div>
+
+            <!-- stats -->
+            <div
+              class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3"
+              x-show="histStats"
+            >
+              <template x-for="c in histCards" :key="c.label">
+                <div class="rounded-2xl border border-line bg-ink/60 p-3.5">
+                  <div
+                    class="text-[10px] font-extrabold uppercase tracking-[.16em] text-slate-500"
+                    x-text="c.label"
+                  ></div>
+                  <div class="mt-1.5 flex items-baseline gap-1">
+                    <span
+                      class="num text-lg font-extrabold tabular-nums"
+                      :style="`color:${c.color}`"
+                      x-text="c.value"
+                    ></span>
+                    <span
+                      class="text-[11px] font-bold text-slate-500"
+                      x-text="c.unit"
+                    ></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- progress to goal -->
+            <div class="mt-4" x-show="histStats && histStats.goal !== null">
+              <div
+                class="flex items-center justify-between text-[12px] font-semibold"
+              >
+                <span class="text-slate-400">Прогресс к цели</span>
+                <span class="text-slate-400">
+                  <span class="num text-mint font-extrabold"
+                    ><span
+                      x-text="`${fmt((histStats?.progress ?? 0) * 100, 0)}%`"
+                    ></span
+                  ></span>
+                </span>
+              </div>
+              <div class="mt-2 h-2 rounded-full bg-line overflow-hidden">
+                <div
+                  class="bar h-full rounded-full bg-gradient-to-r from-acid to-mint"
+                  :style="`width:${((histStats?.progress ?? 0) * 100).toFixed(1)}%`"
+                ></div>
+              </div>
+            </div>
+
+            <!-- chart -->
+            <div class="mt-6" x-show="history.length">
+              <div class="flex gap-2.5">
+                <div class="relative w-10 shrink-0 h-[240px]">
+                  <template x-for="t in chart.yTicks" :key="t.pct">
+                    <span
+                      class="absolute right-0 -translate-y-1/2 text-[10px] font-bold text-slate-600 tabular-nums"
+                      :style="`top:${t.pct}%`"
+                      x-text="fmt(t.v, 1)"
+                    ></span>
+                  </template>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="relative h-[240px]">
+                    <svg
+                      class="absolute inset-0 w-full h-full"
+                      viewBox="0 0 720 240"
+                      preserveAspectRatio="none"
+                      aria-hidden="true"
+                    >
+                      <line x1="0" y1="0" x2="720" y2="0" stroke="#1E2C26" stroke-width="1" vector-effect="non-scaling-stroke" />
+                      <line x1="0" y1="60" x2="720" y2="60" stroke="#1E2C26" stroke-width="1" vector-effect="non-scaling-stroke" />
+                      <line x1="0" y1="120" x2="720" y2="120" stroke="#1E2C26" stroke-width="1" vector-effect="non-scaling-stroke" />
+                      <line x1="0" y1="180" x2="720" y2="180" stroke="#1E2C26" stroke-width="1" vector-effect="non-scaling-stroke" />
+                      <line x1="0" y1="240" x2="720" y2="240" stroke="#1E2C26" stroke-width="1" vector-effect="non-scaling-stroke" />
+                      <defs>
+                        <linearGradient id="tr-line" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stop-color="#C6FF3D" />
+                          <stop offset="100%" stop-color="#3DF5B0" />
+                        </linearGradient>
+                        <linearGradient id="tr-area" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="#3DF5B0" stop-opacity=".30" />
+                          <stop offset="100%" stop-color="#3DF5B0" stop-opacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        class="plot"
+                        :d="chart.area"
+                        fill="url(#tr-area)"
+                        stroke="none"
+                      />
+                      <line
+                        x1="0"
+                        x2="720"
+                        :y1="chart.target"
+                        :y2="chart.target"
+                        stroke="#3DF5B0"
+                        stroke-width="1.5"
+                        stroke-dasharray="7 6"
+                        vector-effect="non-scaling-stroke"
+                        opacity=".85"
+                        x-show="chart.target !== null"
+                      />
+                      <path
+                        class="plot"
+                        :d="chart.line"
+                        fill="none"
+                        stroke="url(#tr-line)"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+
+                    <!-- dots + tooltips -->
+                    <div class="absolute inset-0">
+                      <template x-for="p in chart.pts" :key="p.d">
+                        <div
+                          class="group absolute -translate-x-1/2 -translate-y-1/2"
+                          :style="`left:${p.xPct}%;top:${p.yPct}%`"
+                        >
+                          <span
+                            class="block h-2.5 w-2.5 rounded-full bg-acid ring-2 ring-ink transition-transform duration-200 group-hover:scale-150"
+                          ></span>
+                          <span
+                            class="pointer-events-none absolute bottom-full mb-2 hidden whitespace-nowrap rounded-lg border border-line bg-ink/95 px-2 py-1 text-[10.5px] font-bold text-white opacity-0 shadow-card transition-opacity group-hover:block group-hover:opacity-100"
+                            :class="p.tipAlign === 'left' ? 'left-0 -translate-x-1' : p.tipAlign === 'right' ? 'right-0 translate-x-1' : 'left-1/2 -translate-x-1/2'"
+                            x-text="`${fmt(p.w, 1)} кг · ${p.label}`"
+                          ></span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <div
+                    class="mt-2 flex justify-between text-[10px] font-semibold uppercase tracking-widest text-slate-600"
+                  >
+                    <span x-text="chart.firstLabel"></span>
+                    <span x-text="chart.lastLabel"></span>
+                  </div>
+                </div>
+              </div>
+
+              <p
+                class="mt-4 text-[11px] leading-relaxed text-slate-500"
+                x-show="chart.targetOff === 'below'"
+              >
+                Цель
+                <b class="text-mint" x-text="`${fmt(twEff, 1)} кг`"></b> ниже
+                графика — линия появится, когда вес приблизится к ней.
+              </p>
+              <p
+                class="mt-4 text-[11px] leading-relaxed text-slate-500"
+                x-show="chart.targetOff === 'above'"
+              >
+                Цель
+                <b class="text-mint" x-text="`${fmt(twEff, 1)} кг`"></b> выше
+                графика.
+              </p>
+            </div>
+
+            <!-- empty state -->
+            <div
+              class="mt-6 rounded-2xl border border-dashed border-line bg-ink/40 px-6 py-12 text-center"
+              x-show="!history.length"
+            >
+              <div
+                class="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-mint/10 text-mint"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 17l5-6 4 4 4-6 5 5" />
+                  <path d="M3 21h18" />
+                </svg>
+              </div>
+              <p class="mt-3.5 text-[13px] font-semibold text-slate-400">
+                Добавьте первую запись — и здесь появится график.
+              </p>
+            </div>
+          </div>
+
+          <!-- ---------- SIDE PANELS ---------- -->
+          <div class="space-y-6">
+            <!-- add entry -->
+            <div
+              class="rounded-3xl border border-line bg-panel/80 p-6 shadow-card"
+            >
+              <h3 class="text-[15px] font-extrabold text-white tracking-tight">
+                Добавить запись
+              </h3>
+              <p class="text-xs text-slate-500 mt-1">
+                Одну запись на дату — повторная перезапишет прежнюю.
+              </p>
+
+              <div class="mt-5 space-y-4">
+                <div>
+                  <label
+                    for="hw"
+                    class="text-[13px] font-bold text-slate-300"
+                    >Вес</label
+                  >
+                  <div
+                    class="mt-2 flex items-center gap-1.5 rounded-xl border border-line bg-ink px-3 py-2.5 focus-within:border-mint/60 transition"
+                  >
+                    <input
+                      id="hw"
+                      type="number"
+                      min="30"
+                      max="250"
+                      step="0.1"
+                      inputmode="decimal"
+                      placeholder="0,0"
+                      x-model.number="histWeight"
+                      @keydown.enter="addEntry()"
+                      class="num w-full bg-transparent text-right text-lg font-extrabold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <span class="text-xs font-bold text-slate-500 pb-0.5"
+                      >кг</span
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between">
+                    <label
+                      for="hd"
+                      class="text-[13px] font-bold text-slate-300"
+                      >Дата</label
+                    >
+                    <button
+                      type="button"
+                      @click="histDate = todayISO()"
+                      class="text-[11px] font-bold text-mint hover:text-acid transition"
+                    >
+                      Сегодня
+                    </button>
+                  </div>
+                  <input
+                    id="hd"
+                    type="date"
+                    :max="todayISO()"
+                    x-model="histDate"
+                    @keydown.enter="addEntry()"
+                    class="num mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-[13px] font-bold text-white outline-none focus:border-mint/60 transition"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  @click="addEntry()"
+                  :disabled="!(histWeight > 0)"
+                  class="w-full rounded-xl bg-gradient-to-r from-acid to-mint px-4 py-3 text-[13px] font-extrabold text-ink hover:opacity-90 active:scale-[.98] transition shadow-glow disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  Добавить в историю
+                </button>
+
+                <p class="text-[11px] leading-relaxed text-slate-600">
+                  Текущий вес в калькуляторе обновится по последней записи.
+                </p>
+              </div>
+            </div>
+
+            <!-- history list -->
+            <div
+              class="rounded-3xl border border-line bg-panel/80 p-6 shadow-card"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-[15px] font-extrabold text-white tracking-tight">
+                  История
+                </h3>
+                <button
+                  type="button"
+                  @click="clearHistory()"
+                  x-show="history.length"
+                  class="text-[11px] font-bold text-slate-500 hover:text-rose transition"
+                >
+                  Очистить
+                </button>
+              </div>
+
+              <div
+                class="mt-4 max-h-[340px] space-y-2 overflow-y-auto pr-1"
+                x-show="history.length"
+              >
+                <template x-for="e in historyDesc" :key="e.d">
+                  <div
+                    class="group flex items-center gap-3 rounded-xl border border-line bg-ink/50 px-3 py-2.5"
+                  >
+                    <span
+                      class="text-[11.5px] font-bold text-slate-400 w-[68px] shrink-0"
+                      x-text="e.label"
+                    ></span>
+                    <span
+                      class="num flex-1 text-[14px] font-extrabold text-white tabular-nums"
+                      x-text="`${fmt(e.w, 1)} кг`"
+                    ></span>
+                    <span
+                      class="num text-[11px] font-extrabold tabular-nums"
+                      :style="`color:${e.deltaColor}`"
+                      x-text="e.deltaText"
+                    ></span>
+                    <button
+                      type="button"
+                      @click="removeEntry(e.d)"
+                      :aria-label="`Удалить запись за ${e.label}`"
+                      class="grid h-6 w-6 shrink-0 place-items-center rounded-lg text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-rose/10 hover:text-rose focus:opacity-100"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.6"
+                        stroke-linecap="round"
+                      >
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+              </div>
+
+              <p
+                class="mt-4 text-[12px] text-slate-500"
+                x-show="!history.length"
+              >
+                Записей пока нет.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FORMULAS ============ -->
+      <section id="formula" class="max-w-6xl mx-auto px-5 py-20">
+        <div class="max-w-2xl mb-12">
+          <span
+            class="text-[11px] font-extrabold uppercase tracking-[.24em] text-mint"
+            >Математика</span
+          >
+          <h2
+            class="mt-3 text-[clamp(1.9rem,4.5vw,2.8rem)] font-extrabold tracking-[-.03em] text-white leading-tight"
+          >
+            Пять шагов до вашего плана
+          </h2>
+          <p class="mt-4 text-[15px] leading-relaxed text-slate-400">
+            Каждая цифра выводится из текущего веса и цели. Цель можно задать
+            вручную — или доверить расчёт индексу массы тела: середина нормы
+            18,5–24,9 это <b class="text-mint">21,7</b>.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <template x-for="(s,i) in steps" :key="i">
+            <div
+              class="card-hover group relative overflow-hidden rounded-2xl border border-line bg-panel/70 p-6 hover:bg-panel2 hover:border-acid/25"
+            >
+              <div class="flex items-center gap-3 mb-5">
+                <span
+                  class="num grid place-items-center h-8 w-8 rounded-lg border border-line bg-ink text-[13px] font-extrabold text-acid group-hover:border-acid/40 transition"
+                  x-text="'0'+(i+1)"
+                ></span>
+                <span
+                  class="text-[10px] font-extrabold uppercase tracking-[.18em]"
+                  :style="`color:${s.color}`"
+                  x-text="s.badge"
+                ></span>
+              </div>
+
+              <div
+                class="rounded-xl border border-line bg-ink/70 p-3.5 font-mono text-[12.5px] leading-relaxed text-slate-300 overflow-x-auto"
+              >
+                <span x-html="s.expr"></span>
+              </div>
+
+              <h3
+                class="mt-5 text-[15px] font-extrabold text-white tracking-tight"
+                x-text="s.title"
+              ></h3>
+              <p
+                class="mt-2 text-[13px] leading-relaxed text-slate-500"
+                x-text="s.desc"
+              ></p>
+
+              <div
+                class="mt-5 flex items-end justify-between border-t border-line pt-4"
+              >
+                <span
+                  class="text-[11px] uppercase tracking-widest text-slate-600 font-bold"
+                  >Ваш результат</span
+                >
+                <span
+                  class="num text-2xl font-extrabold"
+                  :style="`color:${s.color}`"
+                >
+                  <span x-text="valid ? fmt(disp[s.key], s.dec) : '—'"></span>
+                  <span
+                    class="text-xs text-slate-500 font-bold ml-1"
+                    x-text="s.unit"
+                  ></span>
+                </span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- ============ DAILY PLAN ============ -->
+      <section id="plan" class="max-w-6xl mx-auto px-5 pb-20">
+        <div
+          class="rounded-3xl border border-line bg-gradient-to-br from-panel2 via-panel to-ink p-6 md:p-10 shadow-card"
+        >
+          <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div>
+              <span
+                class="text-[11px] font-extrabold uppercase tracking-[.24em] text-sky"
+                >Практика</span
+              >
+              <h2
+                class="mt-3 text-[clamp(1.6rem,4vw,2.3rem)] font-extrabold tracking-[-.03em] text-white"
+              >
+                Как это съесть за день
+              </h2>
+              <p class="mt-2 text-[14px] text-slate-400">
+                Четыре готовых меню на 4 приёма пищи. Порции пересчитываются под
+                вашу цель автоматически.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-line bg-ink px-4 py-2.5 text-right"
+            >
+              <div
+                class="text-[10px] uppercase tracking-widest text-slate-500 font-bold"
+              >
+                Ваша норма
+              </div>
+              <div
+                class="num text-xl font-extrabold text-white"
+                x-text="valid ? fmt(tCal,0)+' ккал' : '—'"
+              ></div>
+            </div>
+          </div>
+
+          <!-- ===== DIET TABS ===== -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 rounded-2xl border border-line bg-ink p-1.5 select-none"
+            role="tablist"
+            aria-label="Варианты диеты"
+          >
+            <template x-for="d in diets" :key="d.id">
+              <button
+                type="button"
+                role="tab"
+                :aria-selected="dietId === d.id"
+                @click="setDiet(d.id)"
+                class="min-w-0 rounded-xl px-3 py-2.5 text-left transition-colors duration-200"
+                :class="dietId === d.id
+                  ? 'bg-gradient-to-br from-sky/25 to-sky/5 ring-1 ring-sky/40'
+                  : 'hover:bg-white/5'"
+              >
+                <span
+                  class="block text-[9.5px] font-extrabold uppercase tracking-[.16em]"
+                  :class="dietId === d.id ? 'text-sky' : 'text-slate-500'"
+                  x-text="d.badge"
+                ></span>
+                <span
+                  class="mt-0.5 block truncate text-[12.5px] font-extrabold leading-tight"
+                  :class="dietId === d.id ? 'text-white' : 'text-slate-400'"
+                  x-text="d.label"
+                ></span>
+                <span
+                  class="mt-0.5 block text-[10px] leading-tight"
+                  :class="dietId === d.id ? 'text-slate-300' : 'text-slate-600'"
+                  x-text="d.sub"
+                ></span>
+              </button>
+            </template>
+          </div>
+
+          <!-- ===== SCALE NOTE ===== -->
+          <div
+            class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-ink/50 px-4 py-3"
+          >
+            <div class="flex items-center gap-2.5 text-[12.5px] text-slate-400">
+              <span
+                class="grid place-items-center h-6 w-6 rounded-md bg-sky/10 text-sky shrink-0"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 3v18M3 8h18M3 16h18" />
+                </svg>
+              </span>
+              <span>
+                Порции подогнаны под
+                <b class="text-white font-bold" x-text="fmt(tCal,0)+' ккал'"></b>
+                <span x-show="dietK !== 1">
+                  · коэффициент
+                  <b class="text-sky font-bold" x-text="'×'+fmt(dietK,2)"></b>
+                </span>
+              </span>
+            </div>
+            <span
+              class="num text-[11px] font-bold text-slate-500"
+              x-text="`Базовое меню: ${fmt(dietBaseCal,0)} ккал`"
+            ></span>
+          </div>
+
+          <p
+            class="mt-2.5 text-[11.5px] leading-relaxed text-amber-300/80"
+            x-show="dietClamped"
+          >
+            <span x-show="dietClamped === 'max'"
+              >Меню увеличено до разумного максимума (×1,5): ваша норма
+              значительно выше базовой калорийности этого варианта. Добавьте
+              порции самостоятельно — например, второй полдник.</span
+            >
+            <span x-show="dietClamped === 'min'"
+              >Меню уменьшено до разумного минимума (×0,7): ваша норма ниже
+              базовой калорийности этого варианта. Уберите часть углеводов или
+              выберите вариант полегче.</span
+            >
+          </p>
+
+          <!-- ===== MEALS ===== -->
+          <div class="mt-6 grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <template x-for="meal in dietMeals" :key="meal.name">
+              <div
+                class="flex flex-col rounded-2xl border border-line bg-ink/50 p-5 hover:border-sky/30 transition"
+              >
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2.5">
+                    <span
+                      class="grid place-items-center h-8 w-8 rounded-lg bg-sky/10 border border-sky/20 text-sky"
+                      x-html="meal.icon"
+                    ></span>
+                    <div>
+                      <div
+                        class="text-[13.5px] font-extrabold text-white leading-none"
+                        x-text="meal.name"
+                      ></div>
+                      <div
+                        class="text-[10.5px] text-slate-500 mt-1 font-semibold"
+                        x-text="meal.time"
+                      ></div>
+                    </div>
+                  </div>
+                  <span
+                    class="num text-[10px] font-extrabold px-2 py-1 rounded-md bg-white/5"
+                    :class="Math.abs(meal.mult - 1) > 0.01 ? 'text-sky' : 'text-slate-500'"
+                    x-text="'×'+fmt(meal.mult,2)"
+                  ></span>
+                </div>
+
+                <div class="num text-2xl font-extrabold text-white">
+                  <span x-text="valid ? fmt(meal.cal,0) : '—'"></span>
+                  <span class="text-[11px] text-slate-500 font-bold ml-1"
+                    >ккал</span
+                  >
+                </div>
+
+                <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <template
+                    x-for="mn in [{k:'pro',l:'Б',c:'#C6FF3D'},{k:'fat',l:'Ж',c:'#FF8A3D'},{k:'carb',l:'У',c:'#59C7FF'}]"
+                    :key="mn.l"
+                  >
+                    <div class="rounded-lg border border-line bg-panel/60 py-2">
+                      <div
+                        class="num text-[13px] font-extrabold"
+                        :style="`color:${mn.c}`"
+                        x-text="valid ? fmt(meal[mn.k],0) : '—'"
+                      ></div>
+                      <div
+                        class="text-[9.5px] uppercase tracking-widest text-slate-600 font-bold mt-0.5"
+                        x-text="mn.l"
+                      ></div>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- ingredients -->
+                <ul class="mt-4 flex-1 space-y-1.5 border-t border-line pt-3.5">
+                  <template x-for="it in meal.items" :key="it.n">
+                    <li class="flex items-baseline gap-2 text-[12px]">
+                      <span
+                        class="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-600"
+                      ></span>
+                      <span class="flex-1 text-slate-400" x-text="it.n"></span>
+                      <span
+                        class="num shrink-0 font-bold tabular-nums"
+                        :class="it.scaled ? 'text-sky' : 'text-slate-300'"
+                        x-text="`${fmt(it.qty,0)} ${it.u}`"
+                      ></span>
+                    </li>
+                  </template>
+                </ul>
+
+                <div
+                  class="mt-3.5 flex items-center justify-between border-t border-line pt-3 text-[11px]"
+                >
+                  <span class="text-slate-500 font-semibold">Клетчатка</span>
+                  <span
+                    class="num font-extrabold text-mint"
+                    x-text="valid ? fmt(meal.fib,1)+' г' : '—'"
+                  ></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- ===== DIET TOTALS ===== -->
+          <div
+            class="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+            x-show="valid"
+          >
+            <template
+              x-for="t in [
+                {l:'Итого',    k:'cal',  d:0, u:'ккал', c:'#FFFFFF'},
+                {l:'Белки',    k:'pro',  d:0, u:'г',    c:'#C6FF3D'},
+                {l:'Жиры',     k:'fat',  d:0, u:'г',    c:'#FF8A3D'},
+                {l:'Углеводы', k:'carb', d:0, u:'г',    c:'#59C7FF'},
+                {l:'Клетчатка',k:'fib',  d:1, u:'г',    c:'#3DF5B0'}
+              ]"
+              :key="t.l"
+            >
+              <div class="rounded-2xl border border-line bg-panel/60 px-2.5 sm:px-4 py-3">
+                <div
+                  class="text-[10px] font-bold uppercase tracking-[.14em] text-slate-500"
+                  x-text="t.l"
+                ></div>
+                <div class="mt-1 flex flex-wrap items-baseline gap-x-1">
+                  <span
+                    class="num text-base sm:text-lg font-extrabold tabular-nums"
+                    :style="`color:${t.c}`"
+                    x-text="fmt(dietTotals[t.k], t.d)"
+                  ></span>
+                  <span
+                    class="text-[11px] font-bold text-slate-500"
+                    x-text="t.u"
+                  ></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <template x-for="tip in tips" :key="tip.t">
+              <div
+                class="flex items-center gap-2.5 rounded-xl border border-line bg-ink/50 px-4 py-2.5 text-[12.5px] text-slate-400"
+              >
+                <span
+                  class="grid place-items-center h-5 w-5 rounded-md bg-mint/10 text-mint shrink-0"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </span>
+                <span
+                  ><b class="text-white font-bold" x-text="tip.t"></b>
+                  <span x-text="tip.d"></span
+                ></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ FOOTER ============ -->
+      <footer class="border-t border-line bg-ink/70">
+        <div
+          class="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row items-center justify-between gap-5"
+        >
+          <div class="flex items-center gap-2.5">
+            <span
+              class="grid place-items-center h-8 w-8 rounded-lg bg-gradient-to-br from-acid to-mint text-ink"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" />
+              </svg>
+            </span>
+            <span class="text-[13px] font-extrabold text-white tracking-tight"
+              >FATLOSS·CALC</span
+            >
+          </div>
+          <p
+            class="text-center text-[12px] text-slate-600 max-w-lg leading-relaxed"
+          >
+            Калькулятор создан для быстрого ориентира по питанию. Он не является
+            медицинской рекомендацией. Перед началом диеты проконсультируйтесь
+            со специалистом.
+          </p>
+          <a
+            href="#top"
+            class="inline-flex items-center gap-2 text-[12.5px] font-bold text-slate-400 hover:text-acid transition"
+          >
+            Наверх
+            <svg
+              viewBox="0 0 24 24"
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </a>
+        </div>
+      </footer>
+
+      <!-- ============ TOAST ============ -->
+      <div
+        x-show="toast.show"
+        x-transition.opacity.duration.200ms
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+      >
+        <div
+          class="toast flex items-center gap-3 rounded-2xl border border-acid/30 bg-panel/95 backdrop-blur-xl px-5 py-3.5 shadow-glow"
+        >
+          <span
+            class="grid place-items-center h-7 w-7 rounded-lg bg-acid/15 text-acid"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </span>
+          <span
+            class="text-[13px] font-bold text-white"
+            x-text="toast.text"
+          ></span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("fatCalc", () => {
+          const num = (v) => {
+            const x = parseFloat(v);
+            return Number.isFinite(x) && x > 0 ? x : 0;
+          };
+          const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+          const ICON = {
+            protein:
+              '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5a4 4 0 1 1 5.6 5.6 4 4 0 1 1-5.6-5.6Z"/><path d="m14 14 4 4"/><path d="M18 18a2.5 2.5 0 1 0 3.5 3.5"/></svg>',
+            fat: '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 7 5 10.5 5 14a7 7 0 0 0 14 0c0-3.5-3-7-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/></svg>',
+            fiber:
+              '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 9-9h7v7a7 7 0 0 1-7 7Z"/><path d="M4 20 20 4"/></svg>',
+            carbs:
+              '<svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3 8 6-16 3 8h4"/></svg>',
+            meal: '<svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7a3 3 0 0 0 6 0V2M6 2v20M15 2c-1.5 2-2 4-2 7 0 2 .7 3 2 3.5V22"/></svg>',
+          };
+
+          return {
+            /* ---------- state ---------- */
+            cw: 88,
+            tw: 78,
+            height: 175,
+            mode: "manual", // 'manual' | 'bmi'
+            spin: 0,
+            toast: { show: false, text: "" },
+            toastTimer: null,
+
+            disp: { cal: 0, pro: 0, fat: 0, fib: 0, carb: 0 },
+            _raf: null,
+            _running: false,
+
+            /* ---------- persistence ---------- */
+            STORE_KEY: "fatlosscalc:input:v1",
+            HIST_KEY: "fatlosscalc:history:v1",
+            DEFAULTS: { cw: 88, tw: 78, height: 175, mode: "manual" },
+            _saveTimer: null,
+
+            /* ---------- weight tracker ---------- */
+            history: [], // [{ d: 'YYYY-MM-DD', w: Number }] по возрастанию даты
+            histWeight: null,
+            histDate: null,
+            HIST_MAX: 500,
+
+            /* ---------- constants ---------- */
+            BMI_MID: 21.7, // середина нормы (18,5 + 24,9) / 2
+            BMI_LOW: 18.5,
+            BMI_HIGH: 24.9,
+            SCALE_MIN: 14,
+            SCALE_MAX: 40,
+
+            bmiScale: [
+              { from: 14, to: 16, color: "#FF6B8B", label: "Выраж. дефицит" },
+              { from: 16, to: 18.5, color: "#FF8A3D", label: "Недовес" },
+              { from: 18.5, to: 24.9, color: "#C6FF3D", label: "Норма" },
+              { from: 24.9, to: 29.9, color: "#FF8A3D", label: "Избыток" },
+              { from: 29.9, to: 34.9, color: "#FF6B8B", label: "Ожирение I" },
+              { from: 34.9, to: 40, color: "#E11D48", label: "Ожирение II+" },
+            ],
+
+            n: num,
+
+            /* ---------- helpers ---------- */
+            fmt(v, d = 0) {
+              if (!Number.isFinite(v)) return "—";
+              return v.toLocaleString("ru-RU", {
+                minimumFractionDigits: d,
+                maximumFractionDigits: d,
+              });
+            },
+            pct(v, min, max) {
+              const x = num(v);
+              return clamp(((x - min) / (max - min)) * 100, 0, 100);
+            },
+            bmiPos(v) {
+              return clamp(
+                ((v - this.SCALE_MIN) / (this.SCALE_MAX - this.SCALE_MIN)) *
+                  100,
+                0.5,
+                99.5,
+              );
+            },
+            bmiWeight(bmi) {
+              const h = num(this.height) / 100;
+              return h > 0 ? bmi * h * h : 0;
+            },
+
+            /* ---------- BMI ---------- */
+            get validBmi() {
+              return num(this.cw) > 0 && num(this.height) >= 100;
+            },
+
+            get heightM() {
+              return num(this.height) / 100;
+            },
+
+            get currentBmi() {
+              return this.heightM > 0
+                ? num(this.cw) / (this.heightM * this.heightM)
+                : 0;
+            },
+
+            get currentCat() {
+              const b = this.currentBmi;
+              if (!b) return { label: "—", color: "#64748B" };
+              const found = this.bmiScale.find((s) => b >= s.from && b < s.to);
+              return found
+                ? { label: found.label, color: found.color }
+                : { label: "Ожирение II+", color: "#E11D48" };
+            },
+
+            /* ---------- effective target weight ---------- */
+            get twEff() {
+              if (this.mode === "bmi") {
+                const h = this.heightM;
+                return h > 0 ? this.BMI_MID * h * h : 0;
+              }
+              return num(this.tw);
+            },
+
+            /* ---------- live formulas ---------- */
+            get tCal() {
+              return num(this.cw) * 25;
+            },
+            get tPro() {
+              return this.twEff * 2;
+            },
+            get tFat() {
+              return num(this.cw) * 0.7;
+            },
+            get tFib() {
+              return (this.tCal / 1000) * 14;
+            },
+            get tCarb() {
+              return (this.tCal - num(this.cw) * 13) / 4;
+            },
+
+            get valid() {
+              return num(this.cw) > 0 && this.twEff > 0 && this.tCarb > 0;
+            },
+
+            get delta() {
+              return Math.max(0, num(this.cw) - this.twEff);
+            },
+
+            get projections() {
+              const d = this.delta,
+                r = 0.0075 * num(this.cw);
+              return [
+                { label: "4 недели", val: Math.min(d, r * 4) },
+                { label: "8 недель", val: Math.min(d, r * 8) },
+                { label: "12 недель", val: Math.min(d, r * 12) },
+              ];
+            },
+
+            setMode(m) {
+              if (this.mode === m) return;
+              this.mode = m;
+              if (m === "bmi") this.showToast("Цель считается по ИМТ 21,7");
+              this.kick();
+            },
+
+            setDiet(id) {
+              if (this.dietId === id) return;
+              const d = this.diets.find((x) => x.id === id);
+              if (!d) return;
+              this.dietId = id;
+              this.showToast(`Меню: ${d.label}`);
+            },
+
+            /* ---------- macro cards ---------- */
+            get macroCards() {
+              const maxG = Math.max(
+                this.tPro,
+                this.tFat,
+                Math.max(0, this.tCarb),
+                this.tFib,
+                1,
+              );
+              return [
+                {
+                  key: "pro",
+                  label: "Белки",
+                  tag: "Шаг 2 · минимум",
+                  color: "#C6FF3D",
+                  icon: ICON.protein,
+                  dec: 0,
+                  formula: this.mode === "bmi" ? "ИМТ-цель × 2" : "цель × 2",
+                  note: "Минимум, чтобы сохранить мышечную массу и усилить насыщение.",
+                  share: () => (this.tPro / maxG) * 100,
+                  kcal: () => this.tPro * 4,
+                },
+                {
+                  key: "fat",
+                  label: "Жиры",
+                  tag: "Шаг 3 · максимум",
+                  color: "#FF8A3D",
+                  icon: ICON.fat,
+                  dec: 1,
+                  formula: "вес × 0,7",
+                  note: "Верхний предел — гормоны работают, но калории под контролем.",
+                  share: () => (this.tFat / maxG) * 100,
+                  kcal: () => this.tFat * 9,
+                },
+                {
+                  key: "carb",
+                  label: "Углеводы",
+                  tag: "Шаг 5 · остаток",
+                  color: "#59C7FF",
+                  icon: ICON.carbs,
+                  dec: 0,
+                  formula: "(ккал − вес×13) ÷ 4",
+                  note: "Всё, что осталось после белков и жиров — ваше топливо для тренировок.",
+                  share: () => (Math.max(0, this.tCarb) / maxG) * 100,
+                  kcal: () => Math.max(0, this.tCarb) * 4,
+                },
+                {
+                  key: "fib",
+                  label: "Клетчатка",
+                  tag: "Шаг 4 · каждый день",
+                  color: "#FF6B8B",
+                  icon: ICON.fiber,
+                  dec: 1,
+                  formula: "ккал ÷ 1000 × 14",
+                  note: "Долгое насыщение, стабильный сахар и здоровое пищеварение.",
+                  share: () => (this.tFib / maxG) * 100,
+                  kcal: () => this.tFib * 2,
+                },
+              ];
+            },
+
+            /* ---------- donut ---------- */
+            get donut() {
+              const p = this.tPro * 4,
+                f = this.tFat * 9,
+                c = Math.max(0, this.tCarb) * 4;
+              const total = p + f + c || 1;
+              const C = 301.6;
+              let off = 0;
+              return [
+                { key: "pro", label: "Белки", color: "#C6FF3D", v: p },
+                { key: "carb", label: "Углеводы", color: "#59C7FF", v: c },
+                { key: "fat", label: "Жиры", color: "#FF8A3D", v: f },
+              ].map((x) => {
+                const len = (x.v / total) * C;
+                const seg = {
+                  ...x,
+                  len,
+                  off: -off,
+                  pct: Math.round((x.v / total) * 100),
+                };
+                off += len;
+                return seg;
+              });
+            },
+
+            /* ---------- bars ---------- */
+            get bars() {
+              const max =
+                Math.max(this.tPro, this.tFat, Math.max(0, this.tCarb), 1) *
+                1.08;
+              return [
+                {
+                  label: "Белки",
+                  color: "#C6FF3D",
+                  dec: 0,
+                  max,
+                  value: () => this.tPro,
+                },
+                {
+                  label: "Жиры",
+                  color: "#FF8A3D",
+                  dec: 1,
+                  max,
+                  value: () => this.tFat,
+                },
+                {
+                  label: "Углеводы",
+                  color: "#59C7FF",
+                  dec: 0,
+                  max,
+                  value: () => Math.max(0, this.tCarb),
+                },
+                {
+                  label: "Клетчатка",
+                  color: "#FF6B8B",
+                  dec: 1,
+                  max,
+                  value: () => this.tFib,
+                },
+              ];
+            },
+
+            /* ---------- hero chips ---------- */
+            get heroChips() {
+              return [
+                {
+                  label: "Белки",
+                  color: "#C6FF3D",
+                  top: "4%",
+                  left: "-6%",
+                  get: () => this.tPro,
+                  dec: 0,
+                },
+                {
+                  label: "Жиры",
+                  color: "#FF8A3D",
+                  top: "44%",
+                  left: "82%",
+                  get: () => this.tFat,
+                  dec: 1,
+                },
+                {
+                  label: "Углеводы",
+                  color: "#59C7FF",
+                  top: "84%",
+                  left: "-2%",
+                  get: () => Math.max(0, this.tCarb),
+                  dec: 0,
+                },
+                {
+                  label: "Клетчатка",
+                  color: "#FF6B8B",
+                  top: "70%",
+                  left: "78%",
+                  get: () => this.tFib,
+                  dec: 1,
+                },
+              ];
+            },
+
+            /* ---------- steps ---------- */
+            get steps() {
+              const w = this.fmt(num(this.cw), 1);
+              const t = this.fmt(this.twEff, 1);
+              const k = this.fmt(this.tCal, 0);
+              const h = this.fmt(num(this.height), 0);
+              const hm = this.fmt(this.heightM * this.heightM, 2).replace(
+                ".",
+                ",",
+              );
+              const bmi = this.mode === "bmi";
+
+              const goalExpr = bmi
+                ? `<span class="text-mint">${h}</span> см → <span class="text-mint">${hm}</span> м² × <span class="text-mint">21,7</span> = <span class="text-white font-bold">${t}</span> кг`
+                : `<span class="text-mint">цель</span> = <span class="text-white font-bold">${t}</span> кг <span class="text-slate-500">(вручную)</span>`;
+
+              return [
+                {
+                  key: "cal",
+                  unit: "ккал",
+                  dec: 0,
+                  color: "#C6FF3D",
+                  badge: "Дефицит",
+                  title: "Норма калорий, запускающая жиросжигание",
+                  expr: `<span class="text-acid">${w}</span> × <span class="text-acid">25</span> = <span class="text-white font-bold">${k}</span>`,
+                  desc: "Умножьте текущий вес на 25 — это ваш идеальный дефицит. Достаточно агрессивно, чтобы горел жир, и достаточно мягко, чтобы не посыпались мышцы.",
+                },
+
+                {
+                  key: "tw",
+                  unit: "кг",
+                  dec: 1,
+                  color: "#3DF5B0",
+                  badge: bmi ? "ИМТ 21,7" : "Цель вручную",
+                  title: bmi
+                    ? "Целевой вес по середине нормы ИМТ"
+                    : "Вес, к которому вы стремитесь",
+                  expr: goalExpr,
+                  desc: bmi
+                    ? "Норма ИМТ — 18,5–24,9. Середина диапазона равна 21,7. Умножаем её на квадрат роста в метрах и получаем физиологичную, достижимую цель."
+                    : "Вы задаёте цель сами. Переключите режим на «По ИМТ» — и калькулятор предложит цель, лежащую ровно в середине диапазона нормы.",
+                },
+
+                {
+                  key: "pro",
+                  unit: "г",
+                  dec: 0,
+                  color: "#C6FF3D",
+                  badge: "Белки · минимум",
+                  title: "Минимальная норма белка",
+                  expr: `<span class="text-acid">${t}</span> × <span class="text-acid">2</span> = <span class="text-white font-bold">${this.fmt(this.tPro, 0)}</span> г`,
+                  desc: "Вес, к которому вы стремитесь, умножьте на 2. Это минимум, который сохраняет мышечную массу и заметно усиливает насыщение.",
+                },
+
+                {
+                  key: "fat",
+                  unit: "г",
+                  dec: 1,
+                  color: "#FF8A3D",
+                  badge: "Жиры · максимум",
+                  title: "Максимальная норма жиров",
+                  expr: `<span class="text-ember">${w}</span> × <span class="text-ember">0,7</span> = <span class="text-white font-bold">${this.fmt(this.tFat, 1)}</span> г`,
+                  desc: "Текущий вес умножьте на 0,7 — это потолок по жирам. Ниже опускаться не стоит: страдают гормоны, кожа и усвоение витаминов.",
+                },
+
+                {
+                  key: "fib",
+                  unit: "г",
+                  dec: 1,
+                  color: "#FF6B8B",
+                  badge: "Клетчатка",
+                  title: "Клетчатка каждый день",
+                  expr: `<span class="text-rose">${k}</span> ÷ 1000 × <span class="text-rose">14</span> = <span class="text-white font-bold">${this.fmt(this.tFib, 1)}</span> г`,
+                  desc: "Норму калорий разделите на тысячу и умножьте на 14. Столько клетчатки нужно съедать ежедневно — овощи, зелень, бобовые, цельные крупы.",
+                },
+
+                {
+                  key: "carb",
+                  unit: "г",
+                  dec: 0,
+                  color: "#59C7FF",
+                  badge: "Углеводы",
+                  title: "Остаток уходит в углеводы",
+                  expr: `(<span class="text-sky">${k}</span> − ${w} × <span class="text-sky">13</span>) ÷ 4 = <span class="text-white font-bold">${this.fmt(this.tCarb, 0)}</span> г`,
+                  desc: "Из нормы калорий вычтите вес, умноженный на 13, и разделите на 4. Полученные граммы — ваша дневная норма углеводов.",
+                },
+              ];
+            },
+
+            /* ---------- diets ----------
+               Эталонные порции при k = 1 (коэффициент диеты).
+               f — эластичность ингредиента: 1 = масштабируется полностью,
+               0,3 — слабо (хлеб, авокадо, сухофрукты), 0,15 — масла и семена,
+               0,1 — орехи (практически фиксированы).
+
+               КБЖУ приёма при k = 1 в точности совпадают с исходным меню;
+               дальше масштабируются на средневзвешенную эластичность приёма. */
+            dietId: "classic",
+            DIET_SCALE_MIN: 0.7,
+            DIET_SCALE_MAX: 1.5,
+
+            diets: [
+              {
+                id: "classic",
+                badge: "Вариант 1",
+                label: "Классический",
+                sub: "бюджетный и простой",
+                meals: [
+                  {
+                    name: "Завтрак",
+                    time: "07:30 – 09:00",
+                    kcal: 460,
+                    pro: 25,
+                    fat: 17,
+                    carb: 52,
+                    fib: 8,
+                    items: [
+                      { n: "Овсянка", q: 70, u: "г", f: 1 },
+                      { n: "Молоко 2,5%", q: 150, u: "мл", f: 1 },
+                      { n: "Творог 2,5%", q: 60, u: "г", f: 1 },
+                      { n: "Грецкий орех", q: 10, u: "г", f: 0.1 },
+                    ],
+                  },
+                  {
+                    name: "Обед",
+                    time: "12:30 – 14:00",
+                    kcal: 600,
+                    pro: 48,
+                    fat: 15,
+                    carb: 66,
+                    fib: 12,
+                    items: [
+                      { n: "Куриное филе", q: 150, u: "г", f: 1 },
+                      { n: "Гречка", q: 90, u: "г", f: 1 },
+                      { n: "Масло оливковое", q: 10, u: "г", f: 0.15 },
+                      { n: "Овощной салат", q: 200, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Полдник",
+                    time: "16:00 – 17:00",
+                    kcal: 280,
+                    pro: 10,
+                    fat: 11,
+                    carb: 35,
+                    fib: 4,
+                    items: [
+                      { n: "Кефир 2,5%", q: 250, u: "мл", f: 1 },
+                      { n: "Банан", q: 100, u: "г", f: 1 },
+                      { n: "Миндаль", q: 10, u: "г", f: 0.1 },
+                    ],
+                  },
+                  {
+                    name: "Ужин",
+                    time: "19:00 – 20:30",
+                    kcal: 430,
+                    pro: 43,
+                    fat: 7,
+                    carb: 49,
+                    fib: 8,
+                    items: [
+                      { n: "Белая рыба", q: 200, u: "г", f: 1 },
+                      { n: "Картофель отварной", q: 250, u: "г", f: 1 },
+                      { n: "Квашеная капуста", q: 150, u: "г", f: 1 },
+                      { n: "Масло льняное", q: 5, u: "г", f: 0.15 },
+                    ],
+                  },
+                ],
+              },
+
+              {
+                id: "hearty",
+                badge: "Вариант 2",
+                label: "Сытный",
+                sub: "высокий объём порций",
+                meals: [
+                  {
+                    name: "Завтрак",
+                    time: "07:30 – 09:00",
+                    kcal: 365,
+                    pro: 28,
+                    fat: 13,
+                    carb: 29,
+                    fib: 5,
+                    items: [
+                      { n: "Яйца", q: 2, u: "шт", f: 1, step: 1 },
+                      { n: "Молоко 2,5% (в омлет)", q: 50, u: "мл", f: 1 },
+                      { n: "Хлеб цельнозерновой", q: 60, u: "г", f: 0.3 },
+                      { n: "Творог 2,5% с зеленью", q: 50, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Обед",
+                    time: "12:30 – 14:00",
+                    kcal: 515,
+                    pro: 40,
+                    fat: 12,
+                    carb: 71,
+                    fib: 18,
+                    items: [
+                      { n: "Индейка / говядина постная", q: 140, u: "г", f: 1 },
+                      { n: "Перловка", q: 80, u: "г", f: 1 },
+                      { n: "Авокадо", q: 40, u: "г", f: 0.3 },
+                      { n: "Листовой салат", q: 200, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Полдник",
+                    time: "16:00 – 17:00",
+                    kcal: 230,
+                    pro: 15,
+                    fat: 6,
+                    carb: 26,
+                    fib: 4,
+                    items: [
+                      { n: "Кефир 2,5%", q: 200, u: "мл", f: 1 },
+                      { n: "Творог 2,5%", q: 50, u: "г", f: 1 },
+                      { n: "Ягоды замороженные", q: 150, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Ужин",
+                    time: "19:00 – 20:30",
+                    kcal: 550,
+                    pro: 43,
+                    fat: 8,
+                    carb: 72,
+                    fib: 4,
+                    items: [
+                      { n: "Печень куриная", q: 180, u: "г", f: 1 },
+                      { n: "Макароны твёрдых сортов", q: 70, u: "г", f: 1 },
+                      { n: "Томатный соус", q: 50, u: "г", f: 0.3 },
+                      { n: "Кабачки тушёные", q: 200, u: "г", f: 1 },
+                    ],
+                  },
+                ],
+              },
+
+              {
+                id: "gourmet",
+                badge: "Вариант 3",
+                label: "Гастрономический",
+                sub: "разнообразие вкусов",
+                meals: [
+                  {
+                    name: "Завтрак",
+                    time: "07:30 – 09:00",
+                    kcal: 500,
+                    pro: 31,
+                    fat: 8,
+                    carb: 74,
+                    fib: 6,
+                    items: [
+                      { n: "Творог 2,5% (сырники)", q: 120, u: "г", f: 1 },
+                      { n: "Овсяная мука", q: 40, u: "г", f: 1 },
+                      { n: "Яйцо", q: 1, u: "шт", f: 1, step: 1 },
+                      { n: "Молоко 2,5%", q: 150, u: "мл", f: 1 },
+                      { n: "Яблоко", q: 150, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Обед",
+                    time: "12:30 – 14:00",
+                    kcal: 680,
+                    pro: 41,
+                    fat: 32,
+                    carb: 56,
+                    fib: 9,
+                    items: [
+                      { n: "Форель / кета", q: 130, u: "г", f: 1 },
+                      { n: "Киноа", q: 80, u: "г", f: 1 },
+                      { n: "Масло оливковое", q: 10, u: "г", f: 0.15 },
+                      { n: "Спаржа / стручковая фасоль", q: 200, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Полдник",
+                    time: "16:00 – 17:00",
+                    kcal: 265,
+                    pro: 10,
+                    fat: 11,
+                    carb: 31,
+                    fib: 7,
+                    items: [
+                      { n: "Кефир 2,5%", q: 250, u: "мл", f: 1 },
+                      { n: "Семена чиа", q: 15, u: "г", f: 0.15 },
+                      { n: "Манго / персик", q: 100, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Ужин",
+                    time: "19:00 – 20:30",
+                    kcal: 455,
+                    pro: 45,
+                    fat: 7,
+                    carb: 58,
+                    fib: 11,
+                    items: [
+                      { n: "Кальмары / креветки", q: 200, u: "г", f: 1 },
+                      { n: "Батат запечённый", q: 200, u: "г", f: 1 },
+                      { n: "Масло оливковое", q: 5, u: "г", f: 0.15 },
+                      { n: "Брокколи", q: 200, u: "г", f: 1 },
+                    ],
+                  },
+                ],
+              },
+
+              {
+                id: "mediterranean",
+                badge: "Вариант 4",
+                label: "Средиземноморский",
+                sub: "рыба, бобовые, оливковое масло",
+                meals: [
+                  {
+                    name: "Завтрак",
+                    time: "07:30 – 09:00",
+                    kcal: 510,
+                    pro: 28,
+                    fat: 16,
+                    carb: 61,
+                    fib: 11,
+                    items: [
+                      { n: "Творог 2,5%", q: 100, u: "г", f: 1 },
+                      { n: "Молоко 2,5%", q: 100, u: "мл", f: 1 },
+                      { n: "Овсяные хлопья", q: 50, u: "г", f: 1 },
+                      { n: "Груша", q: 150, u: "г", f: 1 },
+                      { n: "Грецкий орех", q: 10, u: "г", f: 0.1 },
+                      { n: "Семена льна", q: 5, u: "г", f: 0.15 },
+                    ],
+                  },
+                  {
+                    name: "Обед",
+                    time: "12:30 – 14:00",
+                    kcal: 780,
+                    pro: 42,
+                    fat: 39,
+                    carb: 65,
+                    fib: 10,
+                    items: [
+                      { n: "Скумбрия / сардина запечённая", q: 140, u: "г", f: 1 },
+                      { n: "Нут", q: 60, u: "г", f: 1 },
+                      { n: "Масло оливковое", q: 10, u: "г", f: 0.15 },
+                      { n: "Помидоры", q: 100, u: "г", f: 1 },
+                      { n: "Красный лук", q: 50, u: "г", f: 1 },
+                      { n: "Оливки", q: 10, u: "г", f: 0.15 },
+                      { n: "Руккола", q: 200, u: "г", f: 1 },
+                      { n: "Пита цельнозерновая", q: 40, u: "г", f: 0.3 },
+                    ],
+                  },
+                  {
+                    name: "Полдник",
+                    time: "16:00 – 17:00",
+                    kcal: 375,
+                    pro: 9,
+                    fat: 12,
+                    carb: 63,
+                    fib: 7,
+                    items: [
+                      { n: "Кефир 2,5%", q: 250, u: "мл", f: 1 },
+                      { n: "Курага / инжир", q: 40, u: "г", f: 0.3 },
+                      { n: "Фисташки / миндаль", q: 12, u: "г", f: 0.1 },
+                      { n: "Апельсин", q: 150, u: "г", f: 1 },
+                    ],
+                  },
+                  {
+                    name: "Ужин",
+                    time: "19:00 – 20:30",
+                    kcal: 502,
+                    pro: 35,
+                    fat: 11,
+                    carb: 66,
+                    fib: 10,
+                    items: [
+                      { n: "Мидии / креветки", q: 200, u: "г", f: 1 },
+                      { n: "Булгур / кускус", q: 65, u: "г", f: 1 },
+                      { n: "Масло оливковое", q: 8, u: "г", f: 0.15 },
+                      { n: "Овощи гриль", q: 250, u: "г", f: 1 },
+                    ],
+                  },
+                ],
+              },
+            ],
+
+            tips: [
+              {
+                t: "Белок в каждом приёме",
+                d: "— ровное распределение лучше защищает мышцы.",
+              },
+              {
+                t: "Клетчатка из овощей",
+                d: "— минимум 400 г зелени и овощей в сутки.",
+              },
+              { t: "Вода 30–35 мл/кг", d: "— часто жажду путают с голодом." },
+              {
+                t: "Взвешивайтесь 1 раз в неделю",
+                d: "— утром, натощак, смотрите на тренд за 2–3 недели.",
+              },
+            ],
+
+            /* ---------- diets: расчёт порций ---------- */
+            get diet() {
+              return this.diets.find((d) => d.id === this.dietId) || this.diets[0];
+            },
+
+            // базовая калорийность меню (при коэффициенте 1)
+            get dietBaseCal() {
+              return this.diet.meals.reduce((s, m) => s + m.kcal, 0);
+            },
+
+            // во сколько раз подгоняем меню под текущую цель калькулятора
+            get dietK() {
+              if (!this.valid || !this.dietBaseCal) return 1;
+              return clamp(
+                this.tCal / this.dietBaseCal,
+                this.DIET_SCALE_MIN,
+                this.DIET_SCALE_MAX,
+              );
+            },
+
+            // если цель вышла за разумные рамки — честно об этом скажем
+            get dietClamped() {
+              if (!this.valid || !this.dietBaseCal) return null;
+              const raw = this.tCal / this.dietBaseCal;
+              if (raw < this.DIET_SCALE_MIN) return "min";
+              if (raw > this.DIET_SCALE_MAX) return "max";
+              return null;
+            },
+
+            // округление до кухонной точности: штуки — целые, мелочь — по грамму
+            roundQty(q, item) {
+              if (item.u === "шт") return Math.max(1, Math.round(q));
+              if (q < 50) return Math.max(1, Math.round(q));
+              return Math.max(5, Math.round(q / 5) * 5);
+            },
+
+            get dietMeals() {
+              const k = this.dietK;
+              const meals = this.diet.meals;
+
+              // 1) эластичность приёма = средневзвешенная по массе ингредиентов
+              const raw = meals.map((m) => {
+                const tot = m.items.reduce((s, i) => s + i.q, 0) || 1;
+                const w = m.items.reduce(
+                  (s, i) => s + i.q * (i.f == null ? 1 : i.f),
+                  0,
+                );
+                return 1 + (k - 1) * (w / tot);
+              });
+
+              // 2) нормировка: «жёсткие» ингредиенты (орехи, масла) не добирают
+              //    калории, поэтому слегка подправляем множители так, чтобы
+              //    сумма за день точно равнялась норме калькулятора
+              const rawTotal = meals.reduce((s, m, i) => s + m.kcal * raw[i], 0);
+              const target = k * this.dietBaseCal;
+              const fix = rawTotal > 0 && target > 0 ? target / rawTotal : 1;
+
+              return meals.map((m, i) => {
+                const mult = raw[i] * fix;
+                return {
+                  name: m.name,
+                  time: m.time,
+                  icon: ICON.meal,
+                  mult,
+                  items: m.items.map((it) => {
+                    const f = it.f == null ? 1 : it.f;
+                    const qty = this.roundQty(
+                      it.q * (1 + (mult - 1) * f),
+                      it,
+                    );
+                    return {
+                      n: it.n,
+                      u: it.u,
+                      qty,
+                      // подсвечиваем, только если порция реально изменилась
+                      scaled: Math.abs(qty - it.q) >= 1,
+                    };
+                  }),
+                  cal: m.kcal * mult,
+                  pro: m.pro * mult,
+                  fat: m.fat * mult,
+                  carb: m.carb * mult,
+                  fib: m.fib * mult,
+                };
+              });
+            },
+
+            get dietTotals() {
+              return this.dietMeals.reduce(
+                (a, m) => ({
+                  cal: a.cal + m.cal,
+                  pro: a.pro + m.pro,
+                  fat: a.fat + m.fat,
+                  carb: a.carb + m.carb,
+                  fib: a.fib + m.fib,
+                }),
+                { cal: 0, pro: 0, fat: 0, carb: 0, fib: 0 },
+              );
+            },
+
+            /* ---------- warnings ---------- */
+            get warnings() {
+              const out = [];
+              if (!num(this.cw)) {
+                out.push({
+                  level: "warn",
+                  text: "Укажите текущий вес — без него расчёт невозможен.",
+                });
+                return out;
+              }
+              if (num(this.cw) < 30 || num(this.cw) > 250) {
+                out.push({
+                  level: "warn",
+                  text: "Проверьте текущий вес: расчёт рассчитан на диапазон 30–250 кг.",
+                });
+              }
+
+              if (this.mode === "bmi") {
+                if (num(this.height) < 120 || num(this.height) > 230) {
+                  out.push({
+                    level: "warn",
+                    text: "Укажите рост в диапазоне 120–230 см — иначе цель по ИМТ будет недостоверной.",
+                  });
+                }
+                if (this.currentBmi < this.BMI_LOW) {
+                  out.push({
+                    level: "warn",
+                    text: "Ваш ИМТ ниже нормы (18,5). Похудение вам не показано — цель по ИМТ 21,7 означает набор веса. Обратитесь к специалисту.",
+                  });
+                }
+                if (
+                  num(this.height) >= 100 &&
+                  (this.currentBmi > 35 || this.currentBmi < 15)
+                ) {
+                  out.push({
+                    level: "warn",
+                    text: "ИМТ выходит за пределы шкалы. Формула «×25» здесь слишком агрессивна — план нужно составлять с врачом.",
+                  });
+                }
+              } else {
+                if (!num(this.tw)) {
+                  out.push({
+                    level: "warn",
+                    text: "Укажите вес, к которому стремитесь, или переключитесь на расчёт по ИМТ.",
+                  });
+                }
+                if (num(this.tw) < 30 || num(this.tw) > 250) {
+                  out.push({
+                    level: "warn",
+                    text: "Проверьте целевой вес: допустимый диапазон 30–250 кг.",
+                  });
+                }
+              }
+
+              if (this.tCarb <= 0) {
+                out.push({
+                  level: "err",
+                  text: "Углеводы получились отрицательными — при таком весе формула «×25» даёт слишком жёсткий дефицит. Нужен индивидуальный план.",
+                });
+              } else if (this.tCarb < 60) {
+                out.push({
+                  level: "warn",
+                  text: "Углеводов очень мало (<60 г). Это агрессивный режим — держите его коротко и следите за самочувствием и тренировками.",
+                });
+              }
+
+              if (this.valid && this.twEff > num(this.cw)) {
+                out.push({
+                  level: "warn",
+                  text:
+                    this.mode === "bmi"
+                      ? "Расчётный вес по ИМТ 21,7 больше вашего текущего — формула рассчитана на похудение. Для набора массы нужна другая стратегия."
+                      : "Целевой вес больше текущего — формула рассчитана на похудение. Для набора массы нужна другая стратегия.",
+                });
+              }
+              if (this.tPro > (this.tCal / 4) * 0.45) {
+                out.push({
+                  level: "warn",
+                  text: "Белок занимает очень большую долю калорий. Убедитесь, что цель реалистична, и пейте достаточно воды.",
+                });
+              }
+              return out;
+            },
+
+            /* ---------- persistence ---------- */
+            storage() {
+              try {
+                const ls = window.localStorage;
+                if (!ls) return null;
+                // приватный режим / отключённое хранилище — пробуем запись
+                const probe = "__flc_probe__";
+                ls.setItem(probe, "1");
+                ls.removeItem(probe);
+                return ls;
+              } catch (e) {
+                return null;
+              }
+            },
+
+            loadSaved() {
+              const ls = this.storage();
+              if (!ls) return false;
+              let raw;
+              try {
+                raw = ls.getItem(this.STORE_KEY);
+              } catch (e) {
+                return false;
+              }
+              if (!raw) return false;
+
+              let data;
+              try {
+                data = JSON.parse(raw);
+              } catch (e) {
+                this.clearSaved(); // битые данные — не блокируем работу
+                return false;
+              }
+              if (!data || typeof data !== "object") {
+                this.clearSaved();
+                return false;
+              }
+
+              const weight = (v, min, max) => {
+                const x = parseFloat(v);
+                return Number.isFinite(x) && x >= min && x <= max
+                  ? Math.round(x * 2) / 2
+                  : null;
+              };
+
+              // рост: как и вес, принимаем только осмысленный диапазон
+              const cm = (v) => {
+                const x = parseFloat(v);
+                return Number.isFinite(x) && x >= 120 && x <= 230
+                  ? Math.round(x)
+                  : null;
+              };
+
+              const cw = weight(data.cw, 30, 250);
+              const tw = weight(data.tw, 30, 250);
+              const height = cm(data.height);
+              const mode = data.mode === "bmi" || data.mode === "manual"
+                ? data.mode
+                : null;
+
+              // диета: принимаем только известный id, иначе остаётся текущая
+              const dietId =
+                typeof data.dietId === "string" &&
+                this.diets.some((d) => d.id === data.dietId)
+                  ? data.dietId
+                  : null;
+
+              if (cw !== null) this.cw = cw;
+              if (tw !== null) this.tw = tw;
+              if (height !== null) this.height = height;
+              if (mode !== null) this.mode = mode;
+              if (dietId !== null) this.dietId = dietId;
+
+              const restored =
+                cw !== null ||
+                tw !== null ||
+                height !== null ||
+                mode !== null ||
+                dietId !== null;
+              // ни одно поле не пригодилось — хранить это незачем
+              if (!restored) this.clearSaved();
+              return restored;
+            },
+
+            save() {
+              const ls = this.storage();
+              if (!ls) return;
+              const payload = {
+                v: 1,
+                cw: num(this.cw),
+                tw: num(this.tw),
+                height: num(this.height),
+                mode: this.mode === "bmi" ? "bmi" : "manual",
+                dietId: this.dietId,
+                ts: Date.now(),
+              };
+              try {
+                ls.setItem(this.STORE_KEY, JSON.stringify(payload));
+              } catch (e) {
+                /* переполнение квоты — молча игнорируем */
+              }
+            },
+
+            queueSave() {
+              clearTimeout(this._saveTimer);
+              this._saveTimer = setTimeout(() => this.save(), 300);
+            },
+
+            clearSaved() {
+              clearTimeout(this._saveTimer);
+              const ls = this.storage();
+              if (!ls) return;
+              try {
+                ls.removeItem(this.STORE_KEY);
+              } catch (e) {}
+            },
+
+            /* ---------- weight tracker ---------- */
+            todayISO() {
+              const d = new Date();
+              const p = (x) => String(x).padStart(2, "0");
+              return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            },
+
+            // 'YYYY-MM-DD' -> локальная дата (полдень, чтобы не ловить сдвиг TZ)
+            parseISO(s) {
+              if (typeof s !== "string") return null;
+              const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+              if (!m) return null;
+              const y = +m[1],
+                mo = +m[2],
+                da = +m[3];
+              if (mo < 1 || mo > 12 || da < 1 || da > 31) return null;
+              const d = new Date(y, mo - 1, da, 12, 0, 0);
+              // отсекаем несуществующие даты (31 февраля и т.п.)
+              if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== da)
+                return null;
+              return d;
+            },
+
+            dayLabel(s) {
+              const d = this.parseISO(s);
+              if (!d) return s || "—";
+              const p = (x) => String(x).padStart(2, "0");
+              return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${String(d.getFullYear()).slice(2)}`;
+            },
+
+            loadHistory() {
+              const ls = this.storage();
+              if (!ls) return;
+              let raw;
+              try {
+                raw = ls.getItem(this.HIST_KEY);
+              } catch (e) {
+                return;
+              }
+              if (!raw) return;
+              let arr;
+              try {
+                arr = JSON.parse(raw);
+              } catch (e) {
+                this.clearHistory(true);
+                return;
+              }
+              if (!Array.isArray(arr)) {
+                this.clearHistory(true);
+                return;
+              }
+              const byDay = new Map();
+              for (const it of arr) {
+                if (!it || typeof it !== "object") continue;
+                const d = typeof it.d === "string" ? it.d.trim() : "";
+                const w = parseFloat(it.w);
+                if (!this.parseISO(d)) continue;
+                if (!Number.isFinite(w) || w < 30 || w > 250) continue;
+                byDay.set(d, { d, w: Math.round(w * 10) / 10 });
+              }
+              this.history = [...byDay.values()]
+                .sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0))
+                .slice(-this.HIST_MAX);
+              if (!this.history.length) this.clearHistory(true);
+            },
+
+            saveHistory() {
+              const ls = this.storage();
+              if (!ls) return;
+              try {
+                ls.setItem(
+                  this.HIST_KEY,
+                  JSON.stringify(this.history.slice(-this.HIST_MAX)),
+                );
+              } catch (e) {
+                /* квота — молча игнорируем */
+              }
+            },
+
+            addEntry() {
+              const w = Math.round(parseFloat(this.histWeight) * 10) / 10;
+              if (!Number.isFinite(w) || w < 30 || w > 250) {
+                this.showToast("Введите вес в диапазоне 30–250 кг");
+                return;
+              }
+              const day = this.histDate || this.todayISO();
+              if (!this.parseISO(day)) {
+                this.showToast("Укажите корректную дату");
+                return;
+              }
+              if (day > this.todayISO()) {
+                this.showToast("Дата не может быть в будущем");
+                return;
+              }
+
+              const existed = this.history.some((e) => e.d === day);
+              this.history = [
+                ...this.history.filter((e) => e.d !== day),
+                { d: day, w },
+              ]
+                .sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0))
+                .slice(-this.HIST_MAX);
+              this.saveHistory();
+
+              // текущий вес в калькуляторе идёт за последней записью
+              const last = this.history[this.history.length - 1];
+              if (last) this.cw = last.w;
+
+              this.showToast(
+                existed ? `Запись за ${this.dayLabel(day)} обновлена` : `Добавлено: ${this.fmt(w, 1)} кг`,
+              );
+            },
+
+            removeEntry(day) {
+              const before = this.history.length;
+              this.history = this.history.filter((e) => e.d !== day);
+              if (this.history.length === before) return;
+              this.saveHistory();
+              const last = this.history[this.history.length - 1];
+              if (last) this.cw = last.w;
+              this.showToast("Запись удалена");
+            },
+
+            clearHistory(silent = false) {
+              if (!silent && !this.history.length) return;
+              this.history = [];
+              const ls = this.storage();
+              if (ls) {
+                try {
+                  ls.removeItem(this.HIST_KEY);
+                } catch (e) {}
+              }
+              if (!silent) this.showToast("История очищена");
+            },
+
+            get historyDesc() {
+              const asc = this.history;
+              return asc
+                .map((e, i) => {
+                  const prev = i > 0 ? asc[i - 1] : null;
+                  let deltaText = "—",
+                    deltaColor = "#64748B";
+                  if (prev) {
+                    const d = Math.round((e.w - prev.w) * 10) / 10;
+                    if (d === 0) {
+                      deltaText = "0,0";
+                    } else {
+                      deltaText =
+                        (d > 0 ? "+" : "−") +
+                        this.fmt(Math.abs(d), 1).replace("\u00A0", " ");
+                      deltaColor = d > 0 ? "#FF8A3D" : "#3DF5B0";
+                    }
+                  }
+                  return {
+                    d: e.d,
+                    w: e.w,
+                    label: this.dayLabel(e.d),
+                    deltaText,
+                    deltaColor,
+                    delta: prev ? Math.round((e.w - prev.w) * 10) / 10 : 0,
+                  };
+                })
+                .reverse();
+            },
+
+            get histStats() {
+              const h = this.history;
+              if (!h.length) return null;
+              const start = h[0].w,
+                current = h[h.length - 1].w;
+              const goal = this.valid ? this.twEff : null;
+              const change = Math.round((current - start) * 10) / 10;
+              let progress = 0;
+              if (goal !== null && Number.isFinite(goal)) {
+                const denom = start - goal;
+                progress =
+                  denom > 0
+                    ? clamp((start - current) / denom, 0, 1)
+                    : current <= goal
+                      ? 1
+                      : 0;
+              }
+              return {
+                start,
+                current,
+                change,
+                goal,
+                progress,
+                toGoal: goal !== null ? Math.max(0, current - goal) : null,
+              };
+            },
+
+            get histCards() {
+              const s = this.histStats;
+              if (!s) return [];
+              const ch = s.change;
+              const chColor = ch < 0 ? "#3DF5B0" : ch > 0 ? "#FF8A3D" : "#94A3B8";
+              const chText =
+                ch === 0
+                  ? "0,0"
+                  : (ch > 0 ? "+" : "−") + this.fmt(Math.abs(ch), 1);
+              const cards = [
+                { label: "Старт", value: this.fmt(s.start, 1), unit: "кг", color: "#94A3B8" },
+                { label: "Сейчас", value: this.fmt(s.current, 1), unit: "кг", color: "#FFFFFF" },
+                { label: "Изменение", value: chText, unit: "кг", color: chColor },
+              ];
+              if (s.toGoal !== null)
+                cards.push({
+                  label: "До цели",
+                  value: this.fmt(s.toGoal, 1),
+                  unit: "кг",
+                  color: "#C6FF3D",
+                });
+              return cards;
+            },
+
+            /* ---------- chart geometry (viewBox 720×240) ---------- */
+            get chart() {
+              const W = 720,
+                H = 240;
+              const h = this.history;
+              const empty = {
+                pts: [],
+                line: "",
+                area: "",
+                yTicks: [],
+                target: null,
+                targetOff: null,
+                firstLabel: "",
+                lastLabel: "",
+              };
+              if (!h.length) return empty;
+
+              const ws = h.map((e) => e.w);
+              let lo = Math.min(...ws),
+                hi = Math.max(...ws);
+              if (hi - lo < 0.2) {
+                // одна запись или все значения равны — даём диапазон
+                lo -= 1;
+                hi += 1;
+              }
+              const range = hi - lo;
+              const pad = Math.max(0.4, range * 0.12);
+              const yMin = lo - pad,
+                yMax = hi + pad;
+              const span = yMax - yMin || 1;
+
+              const goal =
+                this.valid && Number.isFinite(this.twEff) ? this.twEff : null;
+              let target = null,
+                targetOff = null;
+              if (goal !== null) {
+                if (goal < yMin) targetOff = "below";
+                else if (goal > yMax) targetOff = "above";
+                else target = ((yMax - goal) / span) * H;
+              }
+
+              const n = h.length;
+              const pts = h.map((e, i) => {
+                const xPct = n === 1 ? 50 : (i / (n - 1)) * 100;
+                const yPct = ((yMax - e.w) / span) * 100;
+                return {
+                  d: e.d,
+                  w: e.w,
+                  label: this.dayLabel(e.d),
+                  x: n === 1 ? W / 2 : (i / (n - 1)) * W,
+                  y: (yPct / 100) * H,
+                  xPct,
+                  yPct: clamp(yPct, 2, 98),
+                  // у краёв подсказку прижимаем внутрь, чтобы не вылезала
+                  tipAlign: xPct < 18 ? "left" : xPct > 82 ? "right" : "center",
+                };
+              });
+
+              const line = this.smoothPath(pts);
+              const area = line
+                ? `${line}L${pts[pts.length - 1].x.toFixed(2)},${H}L${pts[0].x.toFixed(2)},${H}Z`
+                : "";
+
+              const yTicks = [0, 25, 50, 75, 100].map((pct) => ({
+                pct,
+                v: yMax - (pct / 100) * span,
+              }));
+
+              return {
+                pts,
+                line,
+                area,
+                yTicks,
+                target,
+                targetOff,
+                firstLabel: this.dayLabel(h[0].d),
+                lastLabel: this.dayLabel(h[n - 1].d),
+              };
+            },
+
+            // сглаживание Catmull-Rom -> кубические Безье
+            smoothPath(pts) {
+              if (!pts.length) return "";
+              if (pts.length === 1) return "";
+              const f = (v) => Number(v.toFixed(2));
+              if (pts.length === 2)
+                return `M${f(pts[0].x)},${f(pts[0].y)}L${f(pts[1].x)},${f(pts[1].y)}`;
+              let d = `M${f(pts[0].x)},${f(pts[0].y)}`;
+              for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i - 1] || pts[i];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[i + 2] || p2;
+                const t = 0.2;
+                const c1x = p1.x + (p2.x - p0.x) * t;
+                const c1y = p1.y + (p2.y - p0.y) * t;
+                const c2x = p2.x - (p3.x - p1.x) * t;
+                const c2y = p2.y - (p3.y - p1.y) * t;
+                d += `C${f(c1x)},${f(c1y)} ${f(c2x)},${f(c2y)} ${f(p2.x)},${f(p2.y)}`;
+              }
+              return d;
+            },
+
+            /* ---------- animation ---------- */
+            init() {
+              const restored = this.loadSaved();
+              this.histDate = this.todayISO();
+              this.loadHistory();
+
+              const d = this.DEFAULTS;
+              const differs =
+                num(this.cw) !== d.cw ||
+                num(this.tw) !== d.tw ||
+                num(this.height) !== d.height ||
+                this.mode !== d.mode;
+
+              this.snap();
+              this.kick();
+              ["cw", "tw", "height", "mode", "dietId"].forEach((k) =>
+                this.$watch(k, () => {
+                  this.kick();
+                  this.queueSave();
+                }),
+              );
+
+              // не теряем правку, сделанную в последние 300 мс перед закрытием
+              const flush = () => {
+                if (this._saveTimer) {
+                  clearTimeout(this._saveTimer);
+                  this._saveTimer = null;
+                  this.save();
+                }
+              };
+              window.addEventListener("pagehide", flush);
+              document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "hidden") flush();
+              });
+
+              if (restored && differs) {
+                this.$nextTick(() =>
+                  this.showToast("Восстановили ваши прошлые значения"),
+                );
+              }
+              const rotate = () => {
+                this.spin = (this.spin + 0.18) % 360;
+                requestAnimationFrame(rotate);
+              };
+              rotate();
+            },
+
+            targets() {
+              return {
+                cal: this.tCal,
+                pro: this.tPro,
+                fat: this.tFat,
+                fib: this.tFib,
+                carb: Math.max(0, this.tCarb),
+              };
+            },
+
+            snap() {
+              this.disp = { ...this.targets() };
+            },
+
+            kick() {
+              if (this._running) return;
+              this._running = true;
+              const step = () => {
+                const t = this.targets();
+                let moving = false;
+                for (const k in t) {
+                  const d = t[k] - this.disp[k];
+                  if (Math.abs(d) > 0.05) {
+                    this.disp[k] += d * 0.22;
+                    moving = true;
+                  } else this.disp[k] = t[k];
+                }
+                if (moving) this._raf = requestAnimationFrame(step);
+                else {
+                  this._running = false;
+                  cancelAnimationFrame(this._raf);
+                }
+              };
+              this._raf = requestAnimationFrame(step);
+            },
+
+            reset() {
+              this.cw = 88;
+              this.tw = 78;
+              this.height = 175;
+              this.mode = "manual";
+              this.kick();
+              this.showToast("Значения сброшены к примеру");
+            },
+
+            showToast(text) {
+              this.toast.text = text;
+              this.toast.show = true;
+              clearTimeout(this.toastTimer);
+              this.toastTimer = setTimeout(
+                () => (this.toast.show = false),
+                2400,
+              );
+            },
+
+            copyResult() {
+              if (!this.valid) {
+                this.showToast("Сначала заполните данные");
+                return;
+              }
+              const goal =
+                this.mode === "bmi"
+                  ? `${this.fmt(this.twEff, 1)} кг (по ИМТ 21,7, рост ${this.fmt(num(this.height), 0)} см)`
+                  : `${this.fmt(this.twEff, 1)} кг (задан вручную)`;
+
+              const txt = `МОЙ ПЛАН ЖИРОСЖИГАНИЯ
+Текущий вес: ${this.fmt(num(this.cw), 1)} кг   Рост: ${this.fmt(num(this.height), 0)} см   ИМТ: ${this.fmt(this.currentBmi, 1)} (${this.currentCat.label})
+Цель: ${goal}
+Норма ИМТ (18,5–24,9) для вашего роста: ${this.fmt(this.bmiWeight(18.5), 1)}–${this.fmt(this.bmiWeight(24.9), 1)} кг
+
+• Калории:   ${this.fmt(this.tCal, 0)} ккал  (вес × 25)
+• Белки:     ${this.fmt(this.tPro, 0)} г     (цель × 2)
+• Жиры:      ${this.fmt(this.tFat, 1)} г     (вес × 0,7)
+• Углеводы:  ${this.fmt(this.tCarb, 0)} г    ((ккал − вес×13) ÷ 4)
+• Клетчатка: ${this.fmt(this.tFib, 1)} г     (ккал ÷ 1000 × 14)`;
+
+              const done = () =>
+                this.showToast("План скопирован в буфер обмена");
+              if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard
+                  .writeText(txt)
+                  .then(done)
+                  .catch(() => this.fallbackCopy(txt, done));
+              } else this.fallbackCopy(txt, done);
+            },
+
+            fallbackCopy(text, cb) {
+              const ta = document.createElement("textarea");
+              ta.value = text;
+              ta.style.position = "fixed";
+              ta.style.opacity = "0";
+              document.body.appendChild(ta);
+              ta.select();
+              try {
+                document.execCommand("copy");
+                cb();
+              } catch (e) {
+                this.showToast("Не удалось скопировать");
+              }
+              document.body.removeChild(ta);
+            },
+          };
+        });
+      });
+    </script>
+  </body>
+</html>

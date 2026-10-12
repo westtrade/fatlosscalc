@@ -1,0 +1,8 @@
+# временные каталоги сборки и проверок
+.build-tw/
+.verify/
+node_modules/
+
+# системное
+.DS_Store
+Thumbs.db

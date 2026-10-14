@@ -100,7 +100,7 @@ SCALE_MAX: 40,
 
 
 bmiScale: [
-  { from: 14, to: 16, color: "#FF6B8B", label: "Выраж. дефицит" },
+  { from: 14, to: 16, color: "#FF6B8B", label: "Выраж. дефицит", short: "Дефицит" },
   { from: 16, to: 18.5, color: "#FF8A3D", label: "Недовес" },
   { from: 18.5, to: 24.9, color: "#C6FF3D", label: "Норма" },
   { from: 24.9, to: 29.9, color: "#FF8A3D", label: "Избыток" },

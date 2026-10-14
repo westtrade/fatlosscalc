@@ -28,6 +28,9 @@
     <!-- ===== ICON SPRITE — генерируется из assets/icons.svg,
           не редактировать вручную: запустите ./build-assets.sh -->
     <svg id="flc-icons" xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  
+  <symbol id="i-diet" viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 10v4M6.5 7.5v9M17.5 7.5v9M21 10v4M6.5 12h11"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
@@ -86,7 +89,7 @@
                 >FATLOSS<span class="text-acid">·</span>CALC</span
               >
               <span
-                class="hidden text-[10px] uppercase tracking-[.22em] text-slate-500 mt-0.5 min-[380px]:block"
+                class="hidden text-[10px] uppercase tracking-[.22em] text-slate-500 mt-0.5 min-[440px]:block"
                 >протокол дефицита</span
               >
             </span>
@@ -98,18 +101,38 @@
             <button
               type="button"
               @click="setRoute('calc')"
-              class="px-3 py-2 rounded-lg whitespace-nowrap transition"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition"
               :class="route === 'calc' ? 'text-ink bg-gradient-to-r from-acid to-mint' : 'hover:text-white hover:bg-white/5'"
             >
-              Калькулятор
+              <svg
+                viewBox="0 0 24 24"
+                class="w-4 h-4 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              ><use href="#i-diet"/></svg>
+              Диета
             </button>
             <button
               type="button"
               @click="setRoute('timer')"
-              class="relative px-3 py-2 rounded-lg whitespace-nowrap transition"
+              class="relative flex items-center gap-2 px-3 py-2 rounded-lg whitespace-nowrap transition"
               :class="route === 'timer' ? 'text-ink bg-gradient-to-r from-acid to-mint' : 'hover:text-white hover:bg-white/5'"
             >
-              Таймер
+              <svg
+                viewBox="0 0 24 24"
+                class="w-4 h-4 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              ><use href="#i-activity"/></svg>
+              Активность
               <span
                 x-show="runningTimer"
                 class="num absolute -top-1 -right-1 rounded-md bg-sky px-1.5 py-0.5 text-[9.5px] font-extrabold text-ink tabular-nums"
@@ -129,20 +152,40 @@
               role="tab"
               :aria-selected="route === 'calc'"
               @click="setRoute('calc')"
-              class="rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
+              class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
               :class="route === 'calc' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400'"
             >
-              Расчёт
+              <svg
+                viewBox="0 0 24 24"
+                class="w-3.5 h-3.5 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              ><use href="#i-diet"/></svg>
+              Диета
             </button>
             <button
               type="button"
               role="tab"
               :aria-selected="route === 'timer'"
               @click="setRoute('timer')"
-              class="relative rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
+              class="relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
               :class="route === 'timer' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400'"
             >
-              Таймер
+              <svg
+                viewBox="0 0 24 24"
+                class="w-3.5 h-3.5 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              ><use href="#i-activity"/></svg>
+              Активность
               <span
                 x-show="runningTimer"
                 class="num absolute -top-1.5 -right-1 rounded-md bg-sky px-1 text-[9px] font-extrabold text-ink tabular-nums"

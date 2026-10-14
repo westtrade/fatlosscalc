@@ -1,0 +1,1280 @@
+/* assets/timer/timer.app.js — интервальный таймер: фазы подготовки, работы,
+   отдыха, паузы между сетами и успокоения. Шаблоны, свои таймеры,
+   drag-n-drop порядка, звук, вибрация, Wake Lock, импорт/экспорт JSON. */
+(function () {
+  "use strict";
+
+  window.FLC = window.FLC || {};
+
+  window.FLC.timer = function timerApp() {
+    // геометрия кольца прогресса
+    const RING_R = 90, RING_C = 2 * Math.PI * RING_R;
+    const LP_R = 95, LP_C = 2 * Math.PI * LP_R;
+
+    return {
+
+
+/* ================= ТАЙМЕР (перенесён из timer.html) ================= */
+
+          C: RING_C,
+
+
+          C2: LP_C,
+
+
+
+          /* ── Описание полей ── */
+          fieldDefs: [
+{
+  key: "prep",
+  label: "Подготовка",
+  hint: "сек",
+  step: 5,
+  min: 0,
+  max: 3600,
+},
+{
+  key: "work",
+  label: "Работа",
+  hint: "сек",
+  step: 5,
+  min: 0,
+  max: 3600,
+},
+{
+  key: "rest",
+  label: "Отдых",
+  hint: "сек",
+  step: 5,
+  min: 0,
+  max: 3600,
+},
+{
+  key: "cycles",
+  label: "Циклы",
+  hint: "работа + отдых",
+  step: 1,
+  min: 1,
+  max: 100,
+},
+{
+  key: "sets",
+  label: "Сеты",
+  hint: "групп",
+  step: 1,
+  min: 1,
+  max: 50,
+},
+{
+  key: "setRest",
+  label: "Между сетами",
+  hint: "сек",
+  step: 5,
+  min: 0,
+  max: 3600,
+},
+{
+  key: "cooldown",
+  label: "Успокоиться",
+  hint: "сек",
+  step: 5,
+  min: 0,
+  max: 3600,
+},
+          ],
+
+
+
+          templates: [
+{
+  name: "Дефолт",
+  settings: {
+    prep: 10,
+    work: 30,
+    rest: 15,
+    cycles: 8,
+    sets: 3,
+    setRest: 60,
+    cooldown: 30,
+  },
+},
+{
+  name: "Tabata",
+  settings: {
+    prep: 10,
+    work: 20,
+    rest: 10,
+    cycles: 8,
+    sets: 1,
+    setRest: 0,
+    cooldown: 20,
+  },
+},
+{
+  name: "HIIT",
+  settings: {
+    prep: 15,
+    work: 40,
+    rest: 20,
+    cycles: 6,
+    sets: 3,
+    setRest: 60,
+    cooldown: 30,
+  },
+},
+{
+  name: "EMOM",
+  settings: {
+    prep: 10,
+    work: 45,
+    rest: 15,
+    cycles: 10,
+    sets: 1,
+    setRest: 0,
+    cooldown: 30,
+  },
+},
+{
+  name: "Пилометрия",
+  settings: {
+    prep: 15,
+    work: 30,
+    rest: 30,
+    cycles: 10,
+    sets: 2,
+    setRest: 90,
+    cooldown: 60,
+  },
+},
+          ],
+
+
+
+          /* ── Модель ── */
+          timers: [],
+
+
+
+          /* ── Стейт активного таймера ── */
+          activeId: null,
+
+
+          finished: false,
+
+
+          focusMode: false,
+
+
+
+          seq: [],
+
+
+          idx: 0,
+
+
+          remaining: 0,
+
+
+          paused: false,
+
+
+          lastTotal: 0,
+
+
+          lastTick: 0,
+
+
+          timerId: null,
+
+
+          elapsedAtStop: 0,
+
+
+          countdownAnnounced: 0,
+
+
+          phaseFlash: false,
+
+
+
+          /* ── Ресурсы ── */
+          audioCtx: null,
+
+
+          anchorOsc: null,
+
+
+          wakeLock: null,
+
+
+
+          /* ── Long press ── */
+          longPressRAF: null,
+
+
+          longPressActive: false,
+
+
+          longPressFired: false,
+
+
+          longPressProgress: 0,
+
+
+
+          /* ── Drag ── */
+          dragId: null,
+
+
+          dragStartY: 0,
+
+
+          dragOriginalIndex: -1,
+
+
+
+          /* ── Undo ── */
+          undo: null,
+
+
+          undoTimerId: null,
+
+
+
+          /* ── Импорт ── */
+          showImportModal: false,
+
+
+          importText: "",
+
+
+
+          /* ═══════════ ИНИЦИАЛИЗАЦИЯ ═══════════ */
+          initTimer() {
+try {
+  const raw = localStorage.getItem("itimer.timers.v2");
+  if (raw) {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) this.timers = arr;
+  }
+} catch (e) {}
+
+if (!this.timers.length) {
+  const t = this.createTimer();
+  t.open = true;
+  this.timers = [t];
+}
+
+this.$watch("timers", () => this.persist(), { deep: true });
+
+window.addEventListener("keydown", this.onKeydown.bind(this));
+window.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && this.activeId)
+    this.requestWakeLock();
+});
+          },
+
+
+
+          persist() {
+try {
+  localStorage.setItem(
+    "itimer.timers.v2",
+    JSON.stringify(this.timers),
+  );
+} catch (e) {}
+          },
+
+
+
+          /* ═══════════ ГОРЯЧИЕ КЛАВИШИ ═══════════ */
+          onKeydown(e) {
+if (this.showImportModal) return;
+if (this.route !== "timer") return;
+if (e.key === "Escape") {
+  if (this.activeId !== null) {
+    this.stopTimerWithUndo();
+    return;
+  }
+  this.timers.forEach((t) => (t.open = false));
+  return;
+}
+if (this.activeId === null || this.finished) return;
+if (e.code === "Space") {
+  e.preventDefault();
+  this.togglePause();
+} else if (e.key === "ArrowRight") {
+  e.preventDefault();
+  this.skip();
+} else if (e.key === "ArrowLeft") {
+  e.preventDefault();
+  this.prev();
+} else if (e.key === "f" || e.key === "F") {
+  this.focusMode = !this.focusMode;
+} else if (e.key === "+" || e.key === "=") {
+  this.addMinute();
+}
+          },
+
+
+
+          /* ═══════════ СОЗДАНИЕ ═══════════ */
+          createTimer(settings) {
+return {
+  id:
+    "t" +
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 6),
+  name: "Таймер " + (this.timers.length + 1),
+  settings: settings
+    ? { ...settings }
+    : {
+        prep: 10,
+        work: 30,
+        rest: 15,
+        cycles: 8,
+        sets: 3,
+        setRest: 60,
+        cooldown: 30,
+      },
+  saved: false,
+  open: false,
+  savingPulse: false,
+};
+          },
+
+
+
+          get hasUnsaved() {
+return this.timers.some((t) => !t.saved);
+          },
+
+
+
+          addFromTemplate(tpl) {
+if (this.hasUnsaved) return;
+const t = this.createTimer(tpl.settings);
+t.name = tpl.name;
+t.saved = true;
+this.timers.push(t);
+this.scrollToTimer(t.id);
+this.vibrate(15);
+          },
+
+
+
+          duplicateTimer(src) {
+const t = this.createTimer({ ...src.settings });
+t.name = src.name + " (копия)";
+t.saved = true;
+const idx = this.timers.findIndex((x) => x.id === src.id);
+this.timers.splice(idx + 1, 0, t);
+this.vibrate(15);
+          },
+
+
+
+          deleteTimer(id) {
+const idx = this.timers.findIndex((t) => t.id === id);
+if (idx === -1) return;
+const [removed] = this.timers.splice(idx, 1);
+
+if (this.activeId === id) this.stopTimer();
+if (!this.timers.length) {
+  const t = this.createTimer();
+  t.open = true;
+  this.timers = [t];
+}
+
+// Undo
+this.showUndo("Таймер удалён", () => {
+  this.timers.splice(Math.min(idx, this.timers.length), 0, removed);
+});
+          },
+
+
+
+          saveTimer(t) {
+if (t.savingPulse) return;
+t.savingPulse = true;
+this.vibrate(20);
+setTimeout(() => {
+  t.saved = true;
+  t.open = false;
+  t.savingPulse = false;
+}, 450);
+          },
+
+
+
+          toggleSettings(t) {
+const wasOpen = t.open;
+this.timers.forEach((x) => (x.open = false));
+t.open = !wasOpen;
+          },
+
+
+
+          scrollToTimer(id) {
+this.$nextTick(() => {
+  const el = document.querySelector(`[data-timer-id="${id}"]`);
+  if (el)
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+          },
+
+
+
+          /* ═══════════ НОРМАЛИЗАЦИЯ ═══════════ */
+          norm(s) {
+const int = (v, min, max) => {
+  let n = Math.floor(Number(v));
+  if (!isFinite(n)) n = min;
+  return Math.min(max, Math.max(min, n));
+};
+return {
+  prep: int(s.prep, 0, 3600),
+  work: int(s.work, 0, 3600),
+  rest: int(s.rest, 0, 3600),
+  cycles: int(s.cycles, 1, 100),
+  sets: int(s.sets, 1, 50),
+  setRest: int(s.setRest, 0, 3600),
+  cooldown: int(s.cooldown, 0, 3600),
+};
+          },
+
+
+
+          totalFor(t) {
+const n = this.norm(t.settings);
+return (
+  n.prep +
+  n.sets * n.cycles * (n.work + n.rest) +
+  Math.max(0, n.sets - 1) * n.setRest +
+  n.cooldown
+);
+          },
+
+
+
+          intervalsFor(t) {
+const n = this.norm(t.settings);
+let c = 0;
+if (n.prep > 0) c++;
+if (n.work > 0) c += n.sets * n.cycles;
+if (n.rest > 0) c += n.sets * n.cycles;
+if (n.setRest > 0) c += Math.max(0, n.sets - 1);
+if (n.cooldown > 0) c++;
+return c;
+          },
+
+
+
+          numsSummary(t) {
+const n = this.norm(t.settings);
+return `${n.work}/${n.rest} × ${n.cycles}`;
+          },
+
+
+
+          adjust(t, key, dir) {
+const f = this.fieldDefs.find((x) => x.key === key);
+if (!f) return;
+const cur = Number(t.settings[key]) || 0;
+let next = cur + dir * f.step;
+next = Math.max(f.min, Math.min(f.max, next));
+t.settings[key] = next;
+this.vibrate(6);
+          },
+
+
+
+          clampField(t, key) {
+const f = this.fieldDefs.find((x) => x.key === key);
+if (!f) return;
+let v = Number(t.settings[key]);
+if (!isFinite(v)) v = f.min;
+v = Math.floor(v);
+v = Math.max(f.min, Math.min(f.max, v));
+t.settings[key] = v;
+          },
+
+
+
+          /* ═══════════ СОСТОЯНИЕ ═══════════ */
+          get activeTimer() {
+return this.timers.find((t) => t.id === this.activeId) || null;
+          },
+
+
+          isActive(t) {
+return this.activeId === t.id;
+          },
+
+
+
+          get current() {
+return this.seq[this.idx] || null;
+          },
+
+
+          get nextPhase() {
+return this.seq[this.idx + 1] || null;
+          },
+
+
+          get prevPhase() {
+return this.idx > 0 ? this.seq[this.idx - 1] : null;
+          },
+
+
+          get remainingSeconds() {
+return Math.max(0, Math.ceil(this.remaining / 1000));
+          },
+
+
+          get elapsedSeconds() {
+return Math.max(0, this.lastTotal - this.remainingTotal());
+          },
+
+
+
+          get progress() {
+const c = this.current;
+if (!c) return 0;
+const total = c.duration * 1000;
+return Math.min(1, Math.max(0, 1 - this.remaining / total));
+          },
+
+
+
+          get overallProgress() {
+if (!this.seq.length) return 0;
+const totalMs = this.seq.reduce((a, p) => a + p.duration * 1000, 0);
+let done = 0;
+for (let i = 0; i < this.idx; i++)
+  done += this.seq[i].duration * 1000;
+done += this.seq[this.idx].duration * 1000 - this.remaining;
+return Math.min(1, Math.max(0, done / totalMs));
+          },
+
+
+
+          remainingTotal() {
+if (!this.seq.length) return 0;
+let total = this.remaining;
+for (let i = this.idx + 1; i < this.seq.length; i++)
+  total += this.seq[i].duration * 1000;
+return total / 1000;
+          },
+
+
+
+          get subLabel() {
+const c = this.current;
+if (!c) return "";
+const act = this.activeTimer;
+const n = act ? this.norm(act.settings) : null;
+if (c.type === "setrest")
+  return `Сет ${c.set} из ${n ? n.sets : "?"}`;
+if (c.set && c.cycle)
+  return `Сет ${c.set}/${n ? n.sets : "?"} · Цикл ${c.cycle}/${n ? n.cycles : "?"}`;
+if (c.set) return `Сет ${c.set}/${n ? n.sets : "?"}`;
+return "";
+          },
+
+
+
+          get phaseStroke() {
+const t = this.current && this.current.type;
+return (
+  {
+    prep: "stroke-sky",
+    work: "stroke-acid",
+    rest: "stroke-ember",
+    setrest: "stroke-rose",
+    cooldown: "stroke-mint",
+  }[t] || "stroke-line"
+);
+          },
+
+
+
+          typeColor(type) {
+return (
+  {
+    prep: "text-sky",
+    work: "text-acid",
+    rest: "text-ember",
+    setrest: "text-rose",
+    cooldown: "text-mint",
+  }[type] || "text-slate-300"
+);
+          },
+
+
+
+          typeDot(type) {
+return (
+  {
+    prep: "fill-sky",
+    work: "fill-acid",
+    rest: "fill-ember",
+    setrest: "fill-rose",
+    cooldown: "fill-mint",
+  }[type] || "fill-slate-600"
+);
+          },
+
+
+
+          /**
+           * Разметка меток интервалов на кольце: по одной точке на фазу.
+           * Возвращает строку SVG, потому что <template x-for> внутри <svg>
+           * не работает: в SVG-пространстве имён template не является
+           * HTMLTemplateElement и у него нет .content.
+           *
+           * Вызывается через x-html на <g>, поэтому перерисовывается
+           * реактивно при смене последовательности фаз.
+           */
+          ringDots() {
+            return this.ringMarkers
+              .map((m) => {
+                const a = m.pos * 2 * Math.PI;
+                // координаты без округления: так точки остаются
+                // пиксельно идентичны прежней реализации
+                const cx = 100 + 100 * Math.cos(a);
+                const cy = 100 + 100 * Math.sin(a);
+                return `<circle cx="${cx}" cy="${cy}" r="2.2" class="${this.typeDot(m.type)}"></circle>`;
+              })
+              .join("");
+          },
+
+          get ringMarkers() {
+if (!this.seq.length || this.seq.length > 60) return [];
+const total = this.seq.reduce((s, p) => s + p.duration, 0);
+if (total === 0) return [];
+let cum = 0;
+return this.seq.map((p) => {
+  cum += p.duration;
+  return { pos: cum / total, type: p.type };
+});
+          },
+
+
+
+          /* ═══════════ ЗАПУСК ═══════════ */
+          startTimer(t) {
+if (this.activeId && this.activeId !== t.id) this.stopTimer();
+
+const n = this.norm(t.settings);
+const seq = this.buildSequence(n);
+if (!seq.length) return;
+
+t.open = false;
+this.finished = false;
+this.activeId = t.id;
+this.seq = seq;
+this.idx = 0;
+this.remaining = seq[0].duration * 1000;
+this.lastTotal = seq.reduce((a, p) => a + p.duration, 0);
+this.paused = false;
+this.countdownAnnounced = 0;
+this.lastTick = performance.now();
+
+this.unlockAudio();
+this.startAnchor();
+this.requestWakeLock();
+this.beep(880, 0.1);
+this.vibrate(30);
+
+if (this.timerId) clearInterval(this.timerId);
+this.timerId = setInterval(() => this.tick(), 100);
+          },
+
+
+
+          restartTimer() {
+const t = this.activeTimer;
+if (!t) return;
+this.stopTimer(false);
+this.startTimer(t);
+          },
+
+
+
+          /* ═══════════ ТИК ═══════════ */
+          tick() {
+if (!this.activeId || this.paused) return;
+
+const now = performance.now();
+let dt = now - this.lastTick;
+this.lastTick = now;
+if (dt < 0 || dt > 2000) dt = 100;
+
+const beforeRemaining = this.remaining;
+this.remaining -= dt;
+
+// Отсчёт последних 3 секунд
+const secNow = Math.ceil(Math.max(0, this.remaining) / 1000);
+if (
+  secNow <= 3 &&
+  secNow >= 1 &&
+  secNow !== this.countdownAnnounced
+) {
+  this.countdownAnnounced = secNow;
+  this.beep(secNow === 1 ? 900 : 700, 0.08);
+  this.vibrate(secNow === 1 ? 25 : 15);
+}
+
+let advanced = false;
+let lastType = null;
+while (this.remaining <= 0) {
+  this.idx++;
+  if (this.idx >= this.seq.length) {
+    this.finish();
+    return;
+  }
+  this.remaining += this.seq[this.idx].duration * 1000;
+  advanced = true;
+  lastType = this.seq[this.idx].type;
+}
+
+if (advanced) {
+  this.countdownAnnounced = 0;
+  this.onPhaseEnter(lastType);
+}
+          },
+
+
+
+          onPhaseEnter(type) {
+// разные паттерны вибрации по фазам
+const patterns = {
+  prep: [30, 40, 30],
+  work: [60, 40, 60],
+  rest: [30],
+  setrest: [40, 80, 40],
+  cooldown: [20, 30, 20],
+};
+const freqs = {
+  prep: 700,
+  work: 880,
+  rest: 560,
+  setrest: 620,
+  cooldown: 520,
+};
+this.vibrate(patterns[type] || [40]);
+this.beep(freqs[type] || 700, 0.16);
+
+this.phaseFlash = false;
+requestAnimationFrame(() => {
+  this.phaseFlash = true;
+  setTimeout(() => {
+    this.phaseFlash = false;
+  }, 420);
+});
+          },
+
+
+
+          /* ═══════════ УПРАВЛЕНИЕ ═══════════ */
+          togglePause() {
+if (!this.activeId) return;
+if (this.paused) {
+  this.paused = false;
+  this.lastTick = performance.now();
+} else {
+  this.paused = true;
+}
+this.vibrate(10);
+          },
+
+
+
+          skip() {
+if (!this.activeId) return;
+if (this.idx + 1 >= this.seq.length) {
+  this.finish();
+  return;
+}
+this.idx++;
+this.remaining = this.seq[this.idx].duration * 1000;
+this.lastTick = performance.now();
+this.countdownAnnounced = 0;
+this.onPhaseEnter(this.seq[this.idx].type);
+          },
+
+
+
+          prev() {
+if (!this.activeId || this.idx <= 0) return;
+this.idx--;
+this.remaining = this.seq[this.idx].duration * 1000;
+this.lastTick = performance.now();
+this.countdownAnnounced = 0;
+this.onPhaseEnter(this.seq[this.idx].type);
+          },
+
+
+
+          addMinute() {
+if (!this.activeId) return;
+const c = this.current;
+if (!c) return;
+this.remaining += 60000;
+c.duration += 60;
+this.beep(700, 0.08);
+this.vibrate(20);
+          },
+
+
+
+          finish() {
+if (this.timerId) clearInterval(this.timerId);
+this.timerId = null;
+this.paused = false;
+this.finished = true;
+this.idx = 0;
+this.remaining = 0;
+this.stopAnchor();
+this.releaseWakeLock();
+
+this.beep(660, 0.15);
+setTimeout(() => this.beep(880, 0.15), 170);
+setTimeout(() => this.beep(1180, 0.35), 340);
+this.vibrate([80, 60, 80, 60, 160]);
+          },
+
+
+
+          stopTimer(releaseActive = true) {
+if (this.timerId) clearInterval(this.timerId);
+this.timerId = null;
+this.paused = false;
+this.finished = false;
+this.seq = [];
+this.idx = 0;
+this.remaining = 0;
+if (releaseActive) this.activeId = null;
+this.stopAnchor();
+this.releaseWakeLock();
+          },
+
+
+
+          stopTimerWithUndo() {
+if (this.activeId === null) return;
+
+// снимок состояния
+const snap = {
+  id: this.activeId,
+  seq: this.seq.map((x) => ({ ...x })),
+  idx: this.idx,
+  remaining: this.remaining,
+  paused: this.paused,
+  lastTotal: this.lastTotal,
+};
+const wasFinished = this.finished;
+
+this.stopTimer();
+
+if (!wasFinished) {
+  this.showUndo("Таймер остановлен", () => {
+    this.activeId = snap.id;
+    this.seq = snap.seq;
+    this.idx = snap.idx;
+    this.remaining = snap.remaining;
+    this.paused = true;
+    this.lastTotal = snap.lastTotal;
+    this.lastTick = performance.now();
+    this.startAnchor();
+    this.requestWakeLock();
+    if (this.timerId) clearInterval(this.timerId);
+    this.timerId = setInterval(() => this.tick(), 100);
+  });
+}
+          },
+
+
+
+          /* ═══════════ LONG PRESS ═══════════ */
+          startLongPress() {
+this.longPressActive = true;
+this.longPressFired = false;
+this.longPressProgress = 0;
+
+const start = performance.now();
+const duration = 600;
+
+const step = (now) => {
+  if (!this.longPressActive) return;
+  const t = Math.min(1, (now - start) / duration);
+  this.longPressProgress = t;
+  if (t >= 1) {
+    this.longPressFired = true;
+    this.vibrate([20, 30, 20]);
+    this.stopTimerWithUndo();
+    this.longPressActive = false;
+    this.longPressProgress = 0;
+    return;
+  }
+  this.longPressRAF = requestAnimationFrame(step);
+};
+this.longPressRAF = requestAnimationFrame(step);
+          },
+
+
+
+          endLongPress() {
+this.longPressActive = false;
+if (this.longPressRAF) {
+  cancelAnimationFrame(this.longPressRAF);
+  this.longPressRAF = null;
+}
+const wasFired = this.longPressFired;
+this.longPressFired = false;
+const wasProgress = this.longPressProgress > 0;
+this.longPressProgress = 0;
+if (!wasFired && !wasProgress) {
+  // одиночный клик
+} else if (!wasFired) {
+  this.togglePause();
+} else {
+  this.togglePause();
+}
+          },
+
+
+
+          cancelLongPress() {
+this.longPressActive = false;
+if (this.longPressRAF) {
+  cancelAnimationFrame(this.longPressRAF);
+  this.longPressRAF = null;
+}
+this.longPressFired = false;
+this.longPressProgress = 0;
+          },
+
+
+
+          /* ═══════════ UNDO ═══════════ */
+          showUndo(label, restoreFn) {
+if (this.undoTimerId) clearTimeout(this.undoTimerId);
+this.undo = { label, restore: restoreFn };
+this.undoTimerId = setTimeout(() => {
+  this.undo = null;
+  this.undoTimerId = null;
+}, 3500);
+          },
+
+
+
+          applyUndo() {
+if (!this.undo) return;
+if (this.undoTimerId) clearTimeout(this.undoTimerId);
+const fn = this.undo.restore;
+this.undo = null;
+this.undoTimerId = null;
+fn();
+this.vibrate(15);
+          },
+
+
+
+          /* ═══════════ DRAG-REORDER ═══════════ */
+          startDrag(t, e) {
+if (this.activeId !== null) return;
+if (e.pointerType === "mouse" && e.button !== 0) return;
+this.dragId = t.id;
+this.dragStartY = e.clientY;
+this.dragOriginalIndex = this.timers.findIndex(
+  (x) => x.id === t.id,
+);
+
+this._dragMove = (ev) => this.onDragMove(ev);
+this._dragEnd = () => this.onDragEnd();
+window.addEventListener("pointermove", this._dragMove);
+window.addEventListener("pointerup", this._dragEnd);
+window.addEventListener("pointercancel", this._dragEnd);
+document.body.style.userSelect = "none";
+          },
+
+
+
+          onDragMove(e) {
+if (!this.dragId) return;
+// Автоскролл если близко к краям
+if (e.clientY < 80) window.scrollBy({ top: -10, behavior: "auto" });
+else if (e.clientY > window.innerHeight - 80)
+  window.scrollBy({ top: 10, behavior: "auto" });
+
+// Найти карточку под указателем
+const cards = Array.from(
+  document.querySelectorAll("[data-timer-id]"),
+);
+for (const el of cards) {
+  if (el.dataset.timerId === this.dragId) continue;
+  const rect = el.getBoundingClientRect();
+  if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+    const fromIdx = this.timers.findIndex(
+      (x) => x.id === this.dragId,
+    );
+    const toIdx = this.timers.findIndex(
+      (x) => x.id === el.dataset.timerId,
+    );
+    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+      const arr = [...this.timers];
+      const [item] = arr.splice(fromIdx, 1);
+      arr.splice(toIdx, 0, item);
+      this.timers = arr;
+    }
+    break;
+  }
+}
+          },
+
+
+
+          onDragEnd() {
+if (!this.dragId) return;
+window.removeEventListener("pointermove", this._dragMove);
+window.removeEventListener("pointerup", this._dragEnd);
+window.removeEventListener("pointercancel", this._dragEnd);
+this.dragId = null;
+document.body.style.userSelect = "";
+          },
+
+
+
+          /* ═══════════ ПОСТРОЕНИЕ ПЛАНА ═══════════ */
+          buildSequence(n) {
+const seq = [];
+const icons = {
+  prep: "⏱",
+  work: "💪",
+  rest: "😌",
+  setrest: "🎯",
+  cooldown: "🧘",
+};
+if (n.prep > 0)
+  seq.push({
+    type: "prep",
+    label: "Подготовка",
+    icon: icons.prep,
+    duration: n.prep,
+  });
+for (let set = 1; set <= n.sets; set++) {
+  for (let cyc = 1; cyc <= n.cycles; cyc++) {
+    if (n.work > 0)
+      seq.push({
+        type: "work",
+        label: "Работа",
+        icon: icons.work,
+        duration: n.work,
+        set,
+        cycle: cyc,
+      });
+    if (n.rest > 0)
+      seq.push({
+        type: "rest",
+        label: "Отдых",
+        icon: icons.rest,
+        duration: n.rest,
+        set,
+        cycle: cyc,
+      });
+  }
+  if (set < n.sets && n.setRest > 0) {
+    seq.push({
+      type: "setrest",
+      label: "Отдых между сетами",
+      icon: icons.setrest,
+      duration: n.setRest,
+      set,
+    });
+  }
+}
+if (n.cooldown > 0)
+  seq.push({
+    type: "cooldown",
+    label: "Успокоиться",
+    icon: icons.cooldown,
+    duration: n.cooldown,
+  });
+return seq;
+          },
+
+
+
+          /* ═══════════ ЭКСПОРТ / ИМПОРТ ═══════════ */
+          exportTimers() {
+const data = JSON.stringify(
+  this.timers.map((t) => ({
+    name: t.name,
+    settings: t.settings,
+  })),
+  null,
+  2,
+);
+const blob = new Blob([data], { type: "application/json" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = `timers-${new Date().toISOString().slice(0, 10)}.json`;
+a.click();
+setTimeout(() => URL.revokeObjectURL(url), 1000);
+this.vibrate(15);
+          },
+
+
+
+          openImport() {
+this.importText = "";
+this.showImportModal = true;
+          },
+
+
+
+          importFromFile(e) {
+const file = e.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = (ev) => {
+  this.importText = ev.target.result;
+  e.target.value = "";
+};
+reader.readAsText(file);
+          },
+
+
+
+          applyImportText() {
+try {
+  const data = JSON.parse(this.importText);
+  if (!Array.isArray(data)) throw new Error("Ожидается массив");
+  const imported = data.map((d) => {
+    const t = this.createTimer(d.settings || {});
+    t.name = d.name || "Импортированный";
+    t.saved = true;
+    return t;
+  });
+  if (!imported.length) throw new Error("Пустой список");
+  this.timers = imported;
+  this.persist();
+  this.showImportModal = false;
+  this.vibrate([20, 30, 20]);
+} catch (err) {
+  alert("Ошибка импорта: " + err.message);
+}
+          },
+
+
+
+          /* ═══════════ WAKE LOCK ═══════════ */
+          async requestWakeLock() {
+try {
+  if ("wakeLock" in navigator) {
+    this.wakeLock = await navigator.wakeLock.request("screen");
+  }
+} catch (e) {}
+          },
+
+
+
+          releaseWakeLock() {
+if (this.wakeLock) {
+  try {
+    this.wakeLock.release();
+  } catch (e) {}
+  this.wakeLock = null;
+}
+          },
+
+
+
+          /* ═══════════ AUDIO ANCHOR ═══════════ */
+          unlockAudio() {
+try {
+  if (!this.audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) this.audioCtx = new Ctx();
+  }
+  if (this.audioCtx && this.audioCtx.state === "suspended")
+    this.audioCtx.resume();
+} catch (e) {}
+          },
+
+
+
+          startAnchor() {
+try {
+  if (!this.audioCtx) return;
+  if (this.anchorOsc) return;
+  const osc = this.audioCtx.createOscillator();
+  const gain = this.audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 40; // почти неслышно
+  gain.gain.value = 0.0008; // очень тихо, но держит контекст активным
+  osc.connect(gain);
+  gain.connect(this.audioCtx.destination);
+  osc.start();
+  this.anchorOsc = { osc, gain };
+} catch (e) {}
+          },
+
+
+
+          stopAnchor() {
+try {
+  if (this.anchorOsc) {
+    this.anchorOsc.osc.stop();
+    this.anchorOsc = null;
+  }
+} catch (e) {}
+          },
+
+
+
+          beep(freq, dur) {
+try {
+  if (!this.audioCtx) return;
+  const ctx = this.audioCtx;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  const t = ctx.currentTime;
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.28, t + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.start(t);
+  osc.stop(t + dur + 0.03);
+} catch (e) {}
+          },
+
+
+
+          vibrate(pattern) {
+try {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+} catch (e) {}
+          },
+
+
+
+          /* ═══════════ ФОРМАТ ═══════════ */
+          fmtTime(sec) {
+sec = Math.max(0, Math.round(Number(sec) || 0));
+const h = Math.floor(sec / 3600);
+const m = Math.floor((sec % 3600) / 60);
+const s = sec % 60;
+const pad = (v) => String(v).padStart(2, "0");
+return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+          }
+    };
+  };
+})();

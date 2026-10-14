@@ -1,0 +1,152 @@
+/* assets/calc/calc.style.css — стили раздела «Калькулятор»:
+   ползунки, карточки, диаграммы, график веса, поля даты. */
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        background: transparent;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          var(--tr-accent, #c6ff3d) 0%,
+          var(--tr-accent, #c6ff3d) var(--pct, 50%),
+          #1b2a23 var(--pct, 50%),
+          #1b2a23 100%
+        );
+      }
+      input[type="range"]::-moz-range-track {
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          var(--tr-accent, #c6ff3d) 0%,
+          var(--tr-accent, #c6ff3d) var(--pct, 50%),
+          #1b2a23 var(--pct, 50%),
+          #1b2a23 100%
+        );
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -8px;
+        height: 24px;
+        width: 24px;
+        border-radius: 999px;
+        background: #0b120f;
+        border: 3px solid var(--tr-accent, #c6ff3d);
+        box-shadow:
+          0 0 0 5px
+            color-mix(in srgb, var(--tr-accent, #c6ff3d) 18%, transparent),
+          0 6px 18px rgba(0, 0, 0, 0.6);
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      input[type="range"]::-moz-range-thumb {
+        height: 20px;
+        width: 20px;
+        border-radius: 999px;
+        background: #0b120f;
+        border: 3px solid var(--tr-accent, #c6ff3d);
+        box-shadow: 0 0 0 5px
+          color-mix(in srgb, var(--tr-accent, #c6ff3d) 18%, transparent);
+      }
+      input[type="range"]:active::-webkit-slider-thumb {
+        transform: scale(1.14);
+      }
+
+      .card-hover {
+        transition:
+          transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+          border-color 0.35s,
+          box-shadow 0.35s,
+          background-color 0.35s;
+      }
+      .card-hover:hover {
+        transform: translateY(-4px);
+      }
+      .bar {
+        transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .soft {
+        transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes floaty {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-9px);
+        }
+      }
+      .floaty {
+        animation: floaty 7s ease-in-out infinite;
+      }
+      @keyframes pulseRing {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.65;
+        }
+        70% {
+          transform: scale(1.5);
+          opacity: 0;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      .pulse-ring {
+        animation: pulseRing 2.8s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+      }
+      @keyframes riseIn {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .rise {
+        animation: riseIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .dash {
+        transition:
+          stroke-dasharray 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+          stroke-dashoffset 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .stripe {
+        background-image: repeating-linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.045) 0 1px,
+          transparent 1px 9px
+        );
+      }
+      input[type="date"] {
+        color-scheme: dark;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0.5;
+        cursor: pointer;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+      }
+      .plot {
+        transition:
+          d 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.3s ease;
+      }
+      .plot-dot {
+        transition:
+          cx 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+          cy 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }

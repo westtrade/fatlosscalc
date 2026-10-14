@@ -51,7 +51,15 @@ cat > "$BUILD_DIR/tailwind.config.js" <<JS
 // Зеркало прежнего inline tailwind.config из index.html.
 // При изменении цветов/шрифтов в разметке правьте и здесь.
 module.exports = {
-  content: ["$PWD/index.html"],
+  // Сканируем и разметку, и JS-модули: часть Tailwind-классов лежит
+  // в ассетах разделов (например stroke-acid и fill-ember — цвета фаз
+  // таймера), и без них эти утилиты не попадут в сборку.
+  content: [
+    "$PWD/index.html",
+    "$PWD/assets/common.app.js",
+    "$PWD/assets/calc/calc.app.js",
+    "$PWD/assets/timer/timer.app.js",
+  ],
   theme: {
     extend: {
       fontFamily: {

@@ -20,15 +20,63 @@ python3 -m http.server 8000     # затем http://localhost:8000
 
 ## Структура
 
+Код разделён на модули по разделам: стили и Alpine-приложения лежат рядом.
+
 ```
-index.html                     вся разметка, стили и логика (Alpine.js)
+index.html                     только разметка (без <style> и <script>)
+
+assets/common.style.css        общие стили: фон, «зерно», числа, тост, скроллбары
+assets/calc/calc.style.css     стили калькулятора: ползунки, карточки, график
+assets/timer/timer.style.css   стили таймера: drag-n-drop, анимации фаз
+
+assets/common.app.js           оболочка: роутер, тост, сборка компонента
+assets/calc/calc.app.js        калькулятор: расчёт, ИМТ, диеты, дневник веса
+assets/timer/timer.app.js      таймер: фазы, шаблоны, звук, Wake Lock
+
 assets/css/tailwind.css        собранный Tailwind (не тянуть из CDN!)
 assets/css/fonts.css           @font-face для Manrope
 assets/fonts/*.woff2           Manrope: 400/600/700/800, cyrillic + latin
 assets/vendor/alpine.min.js    Alpine.js 3.17.4
 assets/vendor/alpine-collapse.min.js   плагин Collapse (нужен для x-collapse)
-build-assets.sh                пересборка всего перечисленного
+build-assets.sh                пересборка Tailwind и вендорных файлов
+tools/split-monolith.py        разовая декомпозиция монолита (история)
 ```
+
+### Как связаны модули
+
+Три приложения регистрируют себя в `window.FLC` (`common`, `calc`, `timer`)
+и объединяются в один Alpine-компонент `fatCalc` в `assets/common.app.js`:
+
+```js
+Alpine.data("fatCalc", () =>
+  mergeModules(window.FLC.common(), window.FLC.calc(), window.FLC.timer()),
+);
+```
+
+Два важных момента:
+
+- **Скрипты подключены до `alpine.js`**, чтобы успеть подписаться на
+  `alpine:init`.
+- **Модули сливаются через дескрипторы, а не `Object.assign`.** `Object.assign`
+  копирует значения и тем самым *вычисляет* геттеры — например `runningTimer`
+  обращается к `this.timers`, которого в модуле оболочки нет, и падает.
+  `mergeModules` переносит дескрипторы, сохраняя геттеры геттерами.
+
+Используются классические скрипты, а не ES-модули: страница должна открываться
+двойным щелчком с диска, а `import` на `file://` блокируется CORS.
+
+### Куда добавлять новый код
+
+| Что | Куда |
+|---|---|
+| Функциональность калькулятора | `assets/calc/calc.app.js` |
+| Функциональность таймера | `assets/timer/timer.app.js` |
+| Роутер, тост, общие хелперы | `assets/common.app.js` |
+| Стили, нужные обоим разделам | `assets/common.style.css` |
+| Стили только одного раздела | `assets/<раздел>/<раздел>.style.css` |
+
+Если добавили Tailwind-классы в `index.html` — пересоберите CSS
+(`./build-assets.sh`).
 
 ## Роутер
 
@@ -96,13 +144,16 @@ setRoute('calc')    // -> #/
   скрипта (цвета `ink`/`panel`/`acid`/`mint`/`ember`/`sky`/`rose`, шрифт
   `Manrope`, тени `glow`/`card`). При добавлении цветов в разметку добавьте их
   и туда.
-- **`content` указывается абсолютным путём** — Tailwind резолвит его
+- **`content` указывается абсолютными путями** — Tailwind резолвит их
   относительно текущего каталога, а не файла конфига; относительный путь даёт
   пустой CSS.
-- **Классы, которые появляются только в рантайме** (например `bg-ink/95` в
-  подсказке графика) — Tailwind находит их статическим сканированием
-  `index.html`, поэтому держите такие классы написанными целиком в разметке и
-  не собирайте имена из кусочков в JS.
+- **`content` перечисляет и `index.html`, и JS-модули в `assets/`.** Часть
+  Tailwind-классов живёт в логике, а не в разметке: например `stroke-acid` и
+  `fill-ember` задают цвета фаз таймера, `text-acid` — акценты в диетах. Если
+  добавите новый файл с классами, допишите его в `content` внутри
+  `build-assets.sh`, иначе утилиты не попадут в сборку и цвета сломаются.
+- **Классы, которые собираются в рантайме склейкой строк**, Tailwind не найдёт
+  никогда — держите имена целиком в коде (как в `phaseStroke`/`typeDot`).
 
 ## Замечание про x-collapse
 

@@ -1,0 +1,87 @@
+/* assets/common.style.css — общие стили приложения.
+   Фон и «зерно» страницы, типографика чисел, тост, скроллбары.
+   Подключается первым; далее assets/calc/calc.style.css и
+   assets/timer/timer.style.css. */
+
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background-color: #070b09;
+        background-image:
+          radial-gradient(
+            900px 600px at 12% -8%,
+            rgba(61, 245, 176, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(
+            800px 520px at 92% 4%,
+            rgba(198, 255, 61, 0.12),
+            transparent 62%
+          ),
+          radial-gradient(
+            700px 700px at 50% 110%,
+            rgba(89, 199, 255, 0.08),
+            transparent 60%
+          );
+        background-attachment: fixed;
+      }
+      .grain::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.035;
+        z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+      }
+
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .toast {
+        animation: toastIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      ::selection {
+        background: #c6ff3d;
+        color: #070b09;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #070b09;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1e2c26;
+        border-radius: 99px;
+        border: 2px solid #070b09;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #2c4038;
+      }
+      [x-cloak] {
+        display: none !important;
+      }

@@ -1,0 +1,86 @@
+/* assets/timer/timer.style.css — стили раздела «Таймер»:
+   drag-n-drop, тонкие скроллбары, анимации фаз и Undo. */
+
+      .no-select {
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .scrollbar-thin::-webkit-scrollbar {
+        height: 5px;
+        width: 5px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #1e2c26;
+        border-radius: 3px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .drag-handle {
+        touch-action: none;
+        cursor: grab;
+      }
+      @keyframes phaseFlash {
+        0% {
+          transform: scale(1);
+        }
+        35% {
+          transform: scale(1.06);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .phase-flash {
+        animation: phaseFlash 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+      }
+      @keyframes savePop {
+        0% {
+          transform: scale(1);
+        }
+        45% {
+          transform: scale(1.25);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .save-pop {
+        animation: savePop 0.45s ease-out;
+      }
+      @keyframes pausePulse {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(61, 245, 176, 0.6);
+        }
+        50% {
+          transform: scale(1.02);
+          box-shadow: 0 0 0 14px rgba(61, 245, 176, 0);
+        }
+      }
+      .pause-pulse {
+        animation: pausePulse 1.8s ease-in-out infinite;
+      }
+      .undo-enter {
+        animation: undoIn 0.25s ease-out;
+      }
+      @keyframes undoIn {
+        from {
+          transform: translate(-50%, 20px);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+      }
+      .dragging {
+        transform: scale(1.02);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        z-index: 10;
+        opacity: 0.95;
+      }
+      .drag-over {
+        border-color: #c6ff3d !important;
+      }

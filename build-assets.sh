@@ -21,7 +21,7 @@ COLLAPSE_VERSION="$ALPINE_VERSION"
 BUILD_DIR=".build-tw"
 CACHE_DIR=".tw-cache"
 
-echo "==> 1/4  Tailwind ${TAILWIND_VERSION}"
+echo "==> 1/5  Tailwind ${TAILWIND_VERSION}"
 mkdir -p "$BUILD_DIR" "$CACHE_DIR"
 export npm_config_cache="$PWD/$CACHE_DIR/.npmcache"
 mkdir -p "$npm_config_cache"
@@ -44,7 +44,7 @@ JSON
   )
 fi
 
-echo "==> 2/4  Сборка CSS из index.html"
+echo "==> 2/5  Сборка CSS из index.html"
 # content задаётся абсолютным путём: Tailwind резолвит его относительно cwd,
 # а не относительно файла конфига (проверено — относительный путь даёт пустой CSS).
 cat > "$BUILD_DIR/tailwind.config.js" <<JS
@@ -98,7 +98,12 @@ mkdir -p assets/css
     --minify
 )
 
-echo "==> 3/4  Скачивание шрифтов Manrope ${FONTSOURCE_VERSION}"
+echo "==> 3/5  Синхронизация спрайта иконок"
+# assets/icons.svg — источник, в index.html он встраивается как регион
+# между маркерами ICON SPRITE (на file:// внешний <use> не работает)
+python3 tools/sync-sprite.py
+
+echo "==> 4/5  Скачивание шрифтов Manrope ${FONTSOURCE_VERSION}"
 mkdir -p assets/fonts
 FONT_BASE="https://cdn.jsdelivr.net/npm/@fontsource/manrope@${FONTSOURCE_VERSION}/files"
 for weight in 400 600 700 800; do
@@ -109,7 +114,7 @@ for weight in 400 600 700 800; do
 done
 echo "    скачано файлов: $(ls assets/fonts | wc -l)"
 
-echo "==> 4/4  Скачивание Alpine.js ${ALPINE_VERSION} + collapse"
+echo "==> 5/5  Скачивание Alpine.js ${ALPINE_VERSION} + collapse"
 mkdir -p assets/vendor
 curl -sfL --retry 3 --max-time 60 \
   "https://cdn.jsdelivr.net/npm/alpinejs@${ALPINE_VERSION}/dist/cdn.min.js" \

@@ -38,9 +38,20 @@ assets/css/fonts.css           @font-face для Manrope
 assets/fonts/*.woff2           Manrope: 400/600/700/800, cyrillic + latin
 assets/vendor/alpine.min.js    Alpine.js 3.17.4
 assets/vendor/alpine-collapse.min.js   плагин Collapse (нужен для x-collapse)
-build-assets.sh                пересборка Tailwind и вендорных файлов
+assets/icons.svg               спрайт иконок: 28 <symbol id="i-…">
+build-assets.sh                пересборка Tailwind, спрайта и вендорных файлов
+tools/sync-sprite.py           встраивание спрайта в index.html
 tools/split-monolith.py        разовая декомпозиция монолита (история)
+agents.md                      правила работы с кодом (в т.ч. про иконки)
 ```
+
+### Иконки
+
+Все иконки — в спрайте `assets/icons.svg`, в разметке используются через
+`<use href="#i-имя"/>`. Спрайт встраивается в `index.html` автоматически
+(`./build-assets.sh`), потому что внешняя ссылка на `file://` не работает.
+Как добавить иконку и почему презентация задаётся на `<svg>`, а не в `symbol`
+— в `agents.md`.
 
 ### Как связаны модули
 

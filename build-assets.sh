@@ -16,22 +16,33 @@ FONTSOURCE_VERSION="5.3.0"
 # версия скрипта-плагина collapse держится в одном ряду с ядром Alpine
 COLLAPSE_VERSION="$ALPINE_VERSION"
 
+# node_modules кэшируется между запусками: первая сборка качает Tailwind
+# (~1 мин), последующие проходят за секунды. Каталог в .gitignore.
 BUILD_DIR=".build-tw"
+CACHE_DIR=".tw-cache"
 
-echo "==> 1/4  Установка Tailwind ${TAILWIND_VERSION}"
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"
-export npm_config_cache="$PWD/$BUILD_DIR/.npmcache"
+echo "==> 1/4  Tailwind ${TAILWIND_VERSION}"
+mkdir -p "$BUILD_DIR" "$CACHE_DIR"
+export npm_config_cache="$PWD/$CACHE_DIR/.npmcache"
 mkdir -p "$npm_config_cache"
 
-cat > "$BUILD_DIR/package.json" <<'JSON'
+INSTALLED=""
+if [ -f "$CACHE_DIR/node_modules/tailwindcss/package.json" ]; then
+  INSTALLED=$(node -p "require('$PWD/$CACHE_DIR/node_modules/tailwindcss/package.json').version" 2>/dev/null || echo "")
+fi
+
+if [ "$INSTALLED" = "$TAILWIND_VERSION" ]; then
+  echo "    уже установлен (${INSTALLED}), пропускаем npm install"
+else
+  echo "    установка tailwindcss@${TAILWIND_VERSION} (было: ${INSTALLED:-нет})"
+  cat > "$CACHE_DIR/package.json" <<'JSON'
 { "name": "fatlosscalc-tw-build", "private": true, "version": "1.0.0" }
 JSON
-
-(
-  cd "$BUILD_DIR"
-  npm install --no-audit --no-fund "tailwindcss@${TAILWIND_VERSION}" >/dev/null
-)
+  (
+    cd "$CACHE_DIR"
+    npm install --no-audit --no-fund "tailwindcss@${TAILWIND_VERSION}" >/dev/null
+  )
+fi
 
 echo "==> 2/4  Сборка CSS из index.html"
 # content задаётся абсолютным путём: Tailwind резолвит его относительно cwd,
@@ -71,11 +82,11 @@ printf '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' > "$BUIL
 
 mkdir -p assets/css
 (
-  cd "$BUILD_DIR"
+  cd "$CACHE_DIR"
   ./node_modules/.bin/tailwindcss \
-    -c tailwind.config.js \
-    -i input.css \
-    -o ../assets/css/tailwind.css \
+    -c "$OLDPWD/$BUILD_DIR/tailwind.config.js" \
+    -i "$OLDPWD/$BUILD_DIR/input.css" \
+    -o "$OLDPWD/assets/css/tailwind.css" \
     --minify
 )
 
@@ -99,7 +110,7 @@ curl -sfL --retry 3 --max-time 60 \
   "https://cdn.jsdelivr.net/npm/@alpinejs/collapse@${COLLAPSE_VERSION}/dist/cdn.min.js" \
   -o assets/vendor/alpine-collapse.min.js
 
-rm -rf "$BUILD_DIR"
+rm -rf "$BUILD_DIR"   # кэш node_modules (.tw-cache) остаётся для быстрых пересборок
 
 echo
 echo "Готово. Локальные ассеты:"

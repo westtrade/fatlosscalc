@@ -1,5 +1,6 @@
 # временные каталоги сборки и проверок
 .build-tw/
+.tw-cache/
 .verify/
 node_modules/
 

@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Хочешь избавиться от жира? — Калькулятор</title>
 
     <!-- Всё подключено локально: страница работает без интернета.
@@ -63,11 +63,13 @@
     <!-- ===== /ICON SPRITE ===== -->
     <div x-data="fatCalc()" x-init="init()" x-cloak class="relative z-10">
       <!-- ============ NAV ============ -->
+      <!-- На мобильных это не бар, а просто надпись слева: без фона,
+           рамки и залипания. Полноценная шапка появляется с md. -->
       <header
-        class="sticky top-0 z-50 border-b border-line/70 bg-ink/80 backdrop-blur-xl"
+        class="z-50 md:sticky md:top-0 md:border-b md:border-line/70 md:bg-ink/80 md:backdrop-blur-xl"
       >
         <div
-          class="max-w-6xl mx-auto px-3 sm:px-5 h-16 flex items-center justify-between gap-2 sm:gap-4"
+          class="max-w-6xl mx-auto px-4 sm:px-5 py-3 md:h-16 md:py-0 flex items-center justify-between gap-2 sm:gap-4"
         >
           <a href="#top" class="flex items-center gap-2.5 group shrink-0">
             <span
@@ -89,7 +91,7 @@
                 >FATLOSS<span class="text-acid">·</span>CALC</span
               >
               <span
-                class="hidden text-[10px] uppercase tracking-[.22em] text-slate-500 mt-0.5 min-[440px]:block"
+                class="hidden text-[10px] uppercase tracking-[.22em] text-slate-500 mt-0.5 md:block"
                 >протокол дефицита</span
               >
             </span>
@@ -141,58 +143,7 @@
             </button>
           </nav>
 
-          <!-- мобильный переключатель разделов -->
-          <div
-            class="flex md:hidden shrink-0 items-center gap-0.5 rounded-xl border border-line bg-ink p-0.5 select-none"
-            role="tablist"
-            aria-label="Разделы"
-          >
-            <button
-              type="button"
-              role="tab"
-              :aria-selected="route === 'calc'"
-              @click="setRoute('calc')"
-              class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
-              :class="route === 'calc' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400'"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                class="w-3.5 h-3.5 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              ><use href="#i-diet"/></svg>
-              Диета
-            </button>
-            <button
-              type="button"
-              role="tab"
-              :aria-selected="route === 'timer'"
-              @click="setRoute('timer')"
-              class="relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11.5px] font-extrabold transition sm:px-2.5 sm:text-[12px]"
-              :class="route === 'timer' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400'"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                class="w-3.5 h-3.5 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              ><use href="#i-activity"/></svg>
-              Активность
-              <span
-                x-show="runningTimer"
-                class="num absolute -top-1.5 -right-1 rounded-md bg-sky px-1 text-[9px] font-extrabold text-ink tabular-nums"
-                x-text="runningTimer ? fmtTime(runningRemaining) : ''"
-              ></span>
-            </button>
-          </div>
+
 
           <button
             @click="copyResult()"
@@ -212,6 +163,69 @@
         </div>
       </header>
 
+
+
+      <!-- ============ BOTTOM NAV (только мобильные) ============ -->
+      <!-- Переключатель разделов вынесен вниз, под большой палец.
+           Скрыт, пока идёт полноэкранный таймер: там свои элементы
+           управления у нижней кромки. -->
+      <nav
+        x-show="activeId === null"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-ink/90 backdrop-blur-xl md:hidden"
+        role="tablist"
+        aria-label="Разделы"
+      >
+        <div
+          class="mx-auto flex max-w-md items-stretch gap-1 px-2 pt-1.5 pb-2"
+          style="padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px))"
+        >
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="route === 'calc'"
+            @click="setRoute('calc')"
+            class="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[12.5px] font-extrabold transition"
+            :class="route === 'calc' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400 active:bg-white/5'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            ><use href="#i-diet"/></svg>
+            Диета
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="route === 'timer'"
+            @click="setRoute('timer')"
+            class="relative flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-[12.5px] font-extrabold transition"
+            :class="route === 'timer' ? 'bg-gradient-to-r from-acid to-mint text-ink' : 'text-slate-400 active:bg-white/5'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="h-4 w-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            ><use href="#i-activity"/></svg>
+            Активность
+            <span
+              x-show="runningTimer"
+              class="num absolute top-1 right-2 rounded-md bg-sky px-1 text-[9px] font-extrabold text-ink tabular-nums"
+              x-text="runningTimer ? fmtTime(runningRemaining) : ''"
+            ></span>
+          </button>
+        </div>
+      </nav>
 
       <!-- ===== SECTION SUBNAV (только калькулятор) ===== -->
       <div
@@ -2058,7 +2072,7 @@
       </section>
 
       <!-- ============ FOOTER ============ -->
-      <footer class="border-t border-line bg-ink/70">
+      <footer class="border-t border-line bg-ink/70 pb-24 md:pb-0">
         <div
           class="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row items-center justify-between gap-5"
         >
@@ -2115,7 +2129,7 @@
       <main
         x-show="activeId === null"
         x-transition.opacity
-        class="flex min-h-screen flex-col px-3 py-3"
+        class="flex min-h-screen flex-col px-3 pt-3 pb-24 md:pb-3"
       >
         <div
           class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3"
@@ -2404,7 +2418,7 @@
       <div
         x-show="activeId !== null"
         x-transition.opacity
-        class="fixed inset-x-0 bottom-0 top-16 z-30 bg-ink"
+        class="fixed inset-x-0 bottom-0 top-0 z-30 bg-ink md:top-16"
       >
         <div class="mx-auto flex h-full max-w-md flex-col">
           <!-- Шапка -->
@@ -2717,7 +2731,7 @@
       <div
         x-show="undo"
         x-transition.opacity
-        class="undo-enter fixed bottom-5 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-line bg-panel/95 px-4 py-2.5 shadow-2xl backdrop-blur"
+        class="undo-enter fixed bottom-24 left-1/2 z-[70] md:bottom-5 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-line bg-panel/95 px-4 py-2.5 shadow-2xl backdrop-blur"
         style="transform: translateX(-50%)"
       >
         <span
@@ -2798,7 +2812,7 @@
       <div
         x-show="toast.show"
         x-transition.opacity.duration.200ms
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none md:bottom-6"
       >
         <div
           class="toast flex items-center gap-3 rounded-2xl border border-acid/30 bg-panel/95 backdrop-blur-xl px-5 py-3.5 shadow-glow"

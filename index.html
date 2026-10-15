@@ -2412,13 +2412,6 @@
             x-show="!finished"
             class="flex flex-1 flex-col items-center justify-center px-4"
           >
-            <!-- Иконка фазы -->
-            <div
-              class="phase-icon select-none text-4xl transition-all duration-500"
-              :class="phaseFlash ? 'phase-flash' : ''"
-              x-text="current ? current.icon : ''"
-            ></div>
-
             <!-- Ряд: prev | круг | next -->
             <div class="mt-3 flex items-start justify-center gap-2">
               <!-- Prev -->
@@ -2482,8 +2475,6 @@
                     :stroke-dasharray="C"
                     :stroke-dashoffset="C * progress"
                   ></circle>
-                  <!-- Метки интервалов: точки строит ringDots() -->
-                  <g x-html="ringDots()"></g>
                 </svg>
 
                 <!-- Кнопка паузы на весь внутренний круг -->
@@ -2666,12 +2657,26 @@
             </div>
           </div>
 
-          <!-- Общий прогресс по нижней кромке -->
-          <div class="h-1 shrink-0 bg-panel">
-            <div
-              class="h-full bg-gradient-to-r from-acid to-mint transition-[width] duration-150 ease-linear"
-              :style="`width: ${(overallProgress * 100).toFixed(2)}%`"
-            ></div>
+          <!-- Прогресс по интервалам: один сегмент — одна фаза.
+               Пройденное залито цветом фазы, будущее — приглушённая
+               дорожка. Раньше интервалы показывались точками вокруг
+               кольца; теперь они здесь, где прогресс и так читается. -->
+          <div class="h-1.5 shrink-0 bg-panel">
+            <div class="flex h-full gap-px">
+              <template x-for="(s, i) in barSegments" :key="i">
+                <div
+                  class="h-full min-w-0"
+                  :class="typeBarDim(s.type)"
+                  :style="`flex:${s.width} 1 0%`"
+                >
+                  <div
+                    class="h-full transition-[width] duration-150 ease-linear"
+                    :class="typeBar(s.type)"
+                    :style="`width:${s.fill}%`"
+                  ></div>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
       </div>

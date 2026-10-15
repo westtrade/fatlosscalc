@@ -193,7 +193,6 @@
           countdownAnnounced: 0,
 
 
-          phaseFlash: false,
 
 
 
@@ -611,52 +610,99 @@ return (
 
 
 
-          typeDot(type) {
-return (
-  {
-    prep: "fill-sky",
-    work: "fill-acid",
-    rest: "fill-ember",
-    setrest: "fill-rose",
-    cooldown: "fill-mint",
-  }[type] || "fill-slate-600"
-);
+          /**
+           * Приглушённый цвет дорожки сегмента (ещё не пройденная часть).
+           * Имена классов записаны целиком: Tailwind не находит классы,
+           * собранные склейкой строк, и эти цвета не попали бы в сборку.
+           */
+          typeBarDim(type) {
+            return (
+              {
+                prep: "bg-sky/20",
+                work: "bg-acid/20",
+                rest: "bg-ember/20",
+                setrest: "bg-rose/20",
+                cooldown: "bg-mint/20",
+              }[type] || "bg-slate-600/20"
+            );
           },
 
-
+          /** Цвет сегмента прогресс-бара для типа фазы. */
+          typeBar(type) {
+            return (
+              {
+                prep: "bg-sky",
+                work: "bg-acid",
+                rest: "bg-ember",
+                setrest: "bg-rose",
+                cooldown: "bg-mint",
+              }[type] || "bg-slate-600"
+            );
+          },
 
           /**
-           * Разметка меток интервалов на кольце: по одной точке на фазу.
-           * Возвращает строку SVG, потому что <template x-for> внутри <svg>
-           * не работает: в SVG-пространстве имён template не является
-           * HTMLTemplateElement и у него нет .content.
+           * Сегменты прогресс-бара под таймером: по одному на фазу.
+           * Ширина пропорциональна длительности, заливка — пройденной
+           * части. Считается от seq, поэтому реактивно перестраивается
+           * при смене плана.
            *
-           * Вызывается через x-html на <g>, поэтому перерисовывается
-           * реактивно при смене последовательности фаз.
+           * Фаз может быть очень много (100 циклов × 50 сетов — больше
+           * тысячи), а бар на телефоне шириной ~390px. Поэтому выше
+           * BAR_MAX_SEGMENTS соседние фазы объединяются в группы, но
+           * так, чтобы групп получилось ровно BAR_MAX_SEGMENTS:
+           * делим фазы поровну (часть групп по 2, часть по 1), а не по
+           * длительности — иначе длинные фазы съедали квоту и сегментов
+           * выходило заметно меньше нужного.
            */
-          ringDots() {
-            return this.ringMarkers
-              .map((m) => {
-                const a = m.pos * 2 * Math.PI;
-                // координаты без округления: так точки остаются
-                // пиксельно идентичны прежней реализации
-                const cx = 100 + 100 * Math.cos(a);
-                const cy = 100 + 100 * Math.sin(a);
-                return `<circle cx="${cx}" cy="${cy}" r="2.2" class="${this.typeDot(m.type)}"></circle>`;
-              })
-              .join("");
+          get barSegments() {
+            const seq = this.seq;
+            if (!seq.length) return [];
+            const total = seq.reduce((a, p) => a + p.duration, 0);
+            if (total <= 0) return [];
+
+            const BAR_MAX_SEGMENTS = 40;
+            const groups = [];
+
+            if (seq.length <= BAR_MAX_SEGMENTS) {
+              for (const p of seq) groups.push({ duration: p.duration, type: p.type });
+            } else {
+              // n фаз в k групп: часть групп на одну фазу больше
+              const k = BAR_MAX_SEGMENTS;
+              const base = Math.floor(seq.length / k);
+              const extra = seq.length % k;
+              let i = 0;
+              for (let g = 0; g < k; g++) {
+                const size = base + (g < extra ? 1 : 0);
+                let duration = 0;
+                const byType = {};
+                for (let n = 0; n < size && i < seq.length; n++, i++) {
+                  duration += seq[i].duration;
+                  byType[seq[i].type] = (byType[seq[i].type] || 0) + seq[i].duration;
+                }
+                const type = Object.keys(byType).reduce((a, b) =>
+                  byType[b] > byType[a] ? b : a,
+                );
+                groups.push({ duration, type });
+              }
+            }
+
+            const done = this.overallProgress * total;
+            let cum = 0;
+            return groups.map((g) => {
+              const startAt = cum;
+              cum += g.duration;
+              const fill = Math.min(
+                1,
+                Math.max(0, (done - startAt) / g.duration),
+              );
+              return {
+                type: g.type,
+                width: (g.duration / total) * 100,
+                fill: fill * 100,
+              };
+            });
           },
 
-          get ringMarkers() {
-if (!this.seq.length || this.seq.length > 60) return [];
-const total = this.seq.reduce((s, p) => s + p.duration, 0);
-if (total === 0) return [];
-let cum = 0;
-return this.seq.map((p) => {
-  cum += p.duration;
-  return { pos: cum / total, type: p.type };
-});
-          },
 
 
 
@@ -764,13 +810,6 @@ const freqs = {
 this.vibrate(patterns[type] || [40]);
 this.beep(freqs[type] || 700, 0.16);
 
-this.phaseFlash = false;
-requestAnimationFrame(() => {
-  this.phaseFlash = true;
-  setTimeout(() => {
-    this.phaseFlash = false;
-  }, 420);
-});
           },
 
 
@@ -1048,18 +1087,10 @@ document.body.style.userSelect = "";
           /* ═══════════ ПОСТРОЕНИЕ ПЛАНА ═══════════ */
           buildSequence(n) {
 const seq = [];
-const icons = {
-  prep: "⏱",
-  work: "💪",
-  rest: "😌",
-  setrest: "🎯",
-  cooldown: "🧘",
-};
 if (n.prep > 0)
   seq.push({
     type: "prep",
     label: "Подготовка",
-    icon: icons.prep,
     duration: n.prep,
   });
 for (let set = 1; set <= n.sets; set++) {
@@ -1068,7 +1099,6 @@ for (let set = 1; set <= n.sets; set++) {
       seq.push({
         type: "work",
         label: "Работа",
-        icon: icons.work,
         duration: n.work,
         set,
         cycle: cyc,
@@ -1077,7 +1107,6 @@ for (let set = 1; set <= n.sets; set++) {
       seq.push({
         type: "rest",
         label: "Отдых",
-        icon: icons.rest,
         duration: n.rest,
         set,
         cycle: cyc,
@@ -1087,7 +1116,6 @@ for (let set = 1; set <= n.sets; set++) {
     seq.push({
       type: "setrest",
       label: "Отдых между сетами",
-      icon: icons.setrest,
       duration: n.setRest,
       set,
     });
@@ -1097,7 +1125,6 @@ if (n.cooldown > 0)
   seq.push({
     type: "cooldown",
     label: "Успокоиться",
-    icon: icons.cooldown,
     duration: n.cooldown,
   });
 return seq;

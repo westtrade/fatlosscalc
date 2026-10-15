@@ -242,10 +242,8 @@
 
 
           /* ── Импорт ── */
-          showImportModal: false,
 
 
-          importText: "",
 
 
 
@@ -289,7 +287,6 @@ try {
 
           /* ═══════════ ГОРЯЧИЕ КЛАВИШИ ═══════════ */
           onKeydown(e) {
-if (this.showImportModal) return;
 if (this.route !== "timer") return;
 if (e.key === "Escape") {
   if (this.activeId !== null) {
@@ -1104,70 +1101,6 @@ if (n.cooldown > 0)
     duration: n.cooldown,
   });
 return seq;
-          },
-
-
-
-          /* ═══════════ ЭКСПОРТ / ИМПОРТ ═══════════ */
-          exportTimers() {
-const data = JSON.stringify(
-  this.timers.map((t) => ({
-    name: t.name,
-    settings: t.settings,
-  })),
-  null,
-  2,
-);
-const blob = new Blob([data], { type: "application/json" });
-const url = URL.createObjectURL(blob);
-const a = document.createElement("a");
-a.href = url;
-a.download = `timers-${new Date().toISOString().slice(0, 10)}.json`;
-a.click();
-setTimeout(() => URL.revokeObjectURL(url), 1000);
-this.vibrate(15);
-          },
-
-
-
-          openImport() {
-this.importText = "";
-this.showImportModal = true;
-          },
-
-
-
-          importFromFile(e) {
-const file = e.target.files[0];
-if (!file) return;
-const reader = new FileReader();
-reader.onload = (ev) => {
-  this.importText = ev.target.result;
-  e.target.value = "";
-};
-reader.readAsText(file);
-          },
-
-
-
-          applyImportText() {
-try {
-  const data = JSON.parse(this.importText);
-  if (!Array.isArray(data)) throw new Error("Ожидается массив");
-  const imported = data.map((d) => {
-    const t = this.createTimer(d.settings || {});
-    t.name = d.name || "Импортированный";
-    t.saved = true;
-    return t;
-  });
-  if (!imported.length) throw new Error("Пустой список");
-  this.timers = imported;
-  this.persist();
-  this.showImportModal = false;
-  this.vibrate([20, 30, 20]);
-} catch (err) {
-  alert("Ошибка импорта: " + err.message);
-}
           },
 
 

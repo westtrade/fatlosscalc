@@ -32,7 +32,6 @@
   <symbol id="i-diet" viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></symbol>
   <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 10v4M6.5 7.5v9M17.5 7.5v9M21 10v4M6.5 12h11"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/></symbol>
-  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-target" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h4"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
@@ -41,8 +40,6 @@
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M12 3v18M3 8h18M3 16h18"/></symbol>
   <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
-  <symbol id="i-export" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
-  <symbol id="i-import" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
   <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-check-bold" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></symbol>
@@ -53,7 +50,6 @@
   <symbol id="i-chevron-left" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></symbol>
   <symbol id="i-chevron-right" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></symbol>
-  <symbol id="i-upload" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M12 4v12m0-12l-4 4m4-4l4 4"/></symbol>
   <symbol id="i-macro-protein" viewBox="0 0 24 24"><path d="M6.5 6.5a4 4 0 1 1 5.6 5.6 4 4 0 1 1-5.6-5.6Z"/><path d="m14 14 4 4"/><path d="M18 18a2.5 2.5 0 1 0 3.5 3.5"/></symbol>
   <symbol id="i-macro-fat" viewBox="0 0 24 24"><path d="M12 2C8 7 5 10.5 5 14a7 7 0 0 0 14 0c0-3.5-3-7-7-12Z"/><path d="M9 15a3 3 0 0 0 3 3"/></symbol>
   <symbol id="i-macro-fiber" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 9-9h7v7a7 7 0 0 1-7 7Z"/><path d="M4 20 20 4"/></symbol>
@@ -61,7 +57,11 @@
   <symbol id="i-macro-meal" viewBox="0 0 24 24"><path d="M3 2v7a3 3 0 0 0 6 0V2M6 2v20M15 2c-1.5 2-2 4-2 7 0 2 .7 3 2 3.5V22"/></symbol>
 </svg>
     <!-- ===== /ICON SPRITE ===== -->
-    <div x-data="fatCalc()" x-init="init()" x-cloak class="relative z-10">
+    <!-- x-init="init()" здесь НЕ нужен: Alpine сам вызывает метод init()
+         у объекта из x-data. С ним init() выполнялся дважды: обработчики
+         навешивались по два раза и взаимно гасили друг друга — например,
+         пробел не ставил паузу в таймере (два togglePause подряд). -->
+    <div x-data="fatCalc()" x-cloak class="relative z-10">
       <!-- ============ NAV ============ -->
       <!-- На мобильных это не бар, а просто надпись слева: без фона,
            рамки и залипания. Полноценная шапка появляется с md. -->
@@ -142,24 +142,6 @@
               ></span>
             </button>
           </nav>
-
-
-
-          <button
-            @click="copyResult()"
-            class="hidden xl:inline-flex shrink-0 items-center gap-2 rounded-xl bg-white/5 border border-line px-3.5 py-2 text-[13px] font-bold text-slate-200 hover:border-acid/50 hover:text-acid hover:bg-acid/5 transition"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ><use href="#i-copy"/></svg>
-            Копировать
-          </button>
         </div>
       </header>
 
@@ -2134,39 +2116,6 @@
         <div
           class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3"
         >
-          <!-- Шапка -->
-          <header class="flex items-center justify-between px-1">
-            <h1 class="text-lg font-semibold tracking-tight">Таймеры</h1>
-            <div class="flex items-center gap-1">
-              <button
-                @click="exportTimers()"
-                class="grid h-9 w-9 place-items-center rounded-xl border border-line bg-panel/60 text-slate-400 transition hover:text-acid active:scale-90"
-                title="Экспорт"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.9"
-                  class="h-4 w-4"
-                ><use href="#i-export"/></svg>
-              </button>
-              <button
-                @click="openImport()"
-                class="grid h-9 w-9 place-items-center rounded-xl border border-line bg-panel/60 text-slate-400 transition hover:text-acid active:scale-90"
-                title="Импорт"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.9"
-                  class="h-4 w-4"
-                ><use href="#i-import"/></svg>
-              </button>
-            </div>
-          </header>
-
           <!-- Шаблоны: горизонтальный скролл -->
           <div
             x-show="!hasUnsaved"
@@ -2744,66 +2693,6 @@
         >
           Вернуть
         </button>
-      </div>
-
-      <!-- ===== МОДАЛКА ИМПОРТА ===== -->
-      <div
-        x-show="showImportModal"
-        x-transition.opacity
-        class="fixed inset-0 z-[60] flex items-end justify-center bg-ink/80 p-4 backdrop-blur-sm sm:items-center"
-        @click.self="showImportModal = false"
-      >
-        <div
-          x-show="showImportModal"
-          x-transition
-          class="w-full max-w-md rounded-3xl border border-line bg-panel p-5"
-        >
-          <h3 class="text-lg font-semibold">Импорт таймеров</h3>
-          <p class="mt-1 text-xs text-slate-500">
-            Вставьте JSON или выберите файл
-          </p>
-
-          <textarea
-            x-model="importText"
-            rows="6"
-            placeholder='[{"name": "...", "settings": {...}}]'
-            class="scrollbar-thin mt-4 w-full resize-none rounded-xl border border-line bg-panel2 px-3 py-2 font-mono text-xs text-slate-200 placeholder:text-slate-600 focus:border-acid focus:outline-none focus:ring-2 focus:ring-acid/40"
-          ></textarea>
-
-          <label
-            class="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-panel2/50 py-2.5 text-xs text-slate-400 transition hover:border-acid/40 hover:text-acid"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.9"
-              class="h-4 w-4"
-            ><use href="#i-upload"/></svg>
-            Выбрать файл
-            <input
-              type="file"
-              accept=".json,application/json"
-              class="hidden"
-              @change="importFromFile($event)"
-            />
-          </label>
-
-          <div class="mt-4 flex gap-3">
-            <button
-              @click="showImportModal = false"
-              class="flex-1 rounded-xl border border-line bg-panel2 py-3 font-medium transition active:scale-[.98]"
-            >
-              Отмена
-            </button>
-            <button
-              @click="applyImportText()"
-              class="flex-1 rounded-xl bg-acid py-3 font-semibold text-ink transition active:scale-[.98]"
-            >
-              Импортировать
-            </button>
-          </div>
-        </div>
       </div>
       </div>
       <!-- ============ /ROUTE: TIMER ============ -->

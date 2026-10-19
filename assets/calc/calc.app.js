@@ -61,9 +61,6 @@ STORE_KEY: "fatlosscalc:input:v1",
 HIST_KEY: "fatlosscalc:history:v1",
 
 
-DEFAULTS: { cw: 88, tw: 78, height: 175, mode: "manual" },
-
-
 _saveTimer: null,
 
 
@@ -244,7 +241,6 @@ get projections() {
 setMode(m) {
   if (this.mode === m) return;
   this.mode = m;
-  if (m === "bmi") this.showToast("Цель считается по ИМТ 21,7");
   this.kick();
 },
 
@@ -255,7 +251,6 @@ setDiet(id) {
   const d = this.diets.find((x) => x.id === id);
   if (!d) return;
   this.dietId = id;
-  this.showToast(`Меню: ${d.label}`);
 },
 
 
@@ -1255,7 +1250,6 @@ addEntry() {
     return;
   }
 
-  const existed = this.history.some((e) => e.d === day);
   this.history = [
     ...this.history.filter((e) => e.d !== day),
     { d: day, w },
@@ -1267,10 +1261,6 @@ addEntry() {
   // текущий вес в калькуляторе идёт за последней записью
   const last = this.history[this.history.length - 1];
   if (last) this.cw = last.w;
-
-  this.showToast(
-    existed ? `Запись за ${this.dayLabel(day)} обновлена` : `Добавлено: ${this.fmt(w, 1)} кг`,
-  );
 },
 
 
@@ -1282,7 +1272,6 @@ removeEntry(day) {
   this.saveHistory();
   const last = this.history[this.history.length - 1];
   if (last) this.cw = last.w;
-  this.showToast("Запись удалена");
 },
 
 
@@ -1296,7 +1285,6 @@ clearHistory(silent = false) {
       ls.removeItem(this.HIST_KEY);
     } catch (e) {}
   }
-  if (!silent) this.showToast("История очищена");
 },
 
 
@@ -1543,7 +1531,6 @@ reset() {
   this.height = 175;
   this.mode = "manual";
   this.kick();
-  this.showToast("Значения сброшены к примеру");
 },
 
 

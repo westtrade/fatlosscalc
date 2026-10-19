@@ -47,16 +47,9 @@ storage() {
 
 /* ---------- animation ---------- */
 init() {
-  const restored = this.loadSaved();
+  this.loadSaved();
   this.histDate = this.todayISO();
   this.loadHistory();
-
-  const d = this.DEFAULTS;
-  const differs =
-    this.n(this.cw) !== d.cw ||
-    this.n(this.tw) !== d.tw ||
-    this.n(this.height) !== d.height ||
-    this.mode !== d.mode;
 
   // роутер: начальный маршрут + реакция на изменение хеша
   this.syncRoute();
@@ -93,11 +86,6 @@ init() {
     if (document.visibilityState === "hidden") flush();
   });
 
-  if (restored && differs) {
-    this.$nextTick(() =>
-      this.showToast("Восстановили ваши прошлые значения"),
-    );
-  }
   const rotate = () => {
     this.spin = (this.spin + 0.18) % 360;
     requestAnimationFrame(rotate);

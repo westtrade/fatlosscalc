@@ -162,9 +162,6 @@
           finished: false,
 
 
-          focusMode: false,
-
-
 
           seq: [],
 
@@ -305,8 +302,6 @@ if (e.code === "Space") {
 } else if (e.key === "ArrowLeft") {
   e.preventDefault();
   this.prev();
-} else if (e.key === "f" || e.key === "F") {
-  this.focusMode = !this.focusMode;
 } else if (e.key === "+" || e.key === "=") {
   this.addMinute();
 }
@@ -445,7 +440,8 @@ return {
 const n = this.norm(t.settings);
 return (
   n.prep +
-  n.sets * n.cycles * (n.work + n.rest) +
+  n.sets * n.cycles * n.work +
+  n.sets * Math.max(0, n.cycles - 1) * n.rest +
   Math.max(0, n.sets - 1) * n.setRest +
   n.cooldown
 );
@@ -458,7 +454,7 @@ const n = this.norm(t.settings);
 let c = 0;
 if (n.prep > 0) c++;
 if (n.work > 0) c += n.sets * n.cycles;
-if (n.rest > 0) c += n.sets * n.cycles;
+if (n.rest > 0) c += n.sets * Math.max(0, n.cycles - 1);
 if (n.setRest > 0) c += Math.max(0, n.sets - 1);
 if (n.cooldown > 0) c++;
 return c;
@@ -641,18 +637,30 @@ return (
           },
 
           /**
-           * Сегменты прогресс-бара под таймером: по одному на фазу.
-           * Ширина пропорциональна длительности, заливка — пройденной
-           * части. Считается от seq, поэтому реактивно перестраивается
-           * при смене плана.
+           * Сегменты прогресс-бара под таймером.
            *
-           * Фаз может быть очень много (100 циклов × 50 сетов — больше
-           * тысячи), а бар на телефоне шириной ~390px. Поэтому выше
-           * BAR_MAX_SEGMENTS соседние фазы объединяются в группы, но
-           * так, чтобы групп получилось ровно BAR_MAX_SEGMENTS:
-           * делим фазы поровну (часть групп по 2, часть по 1), а не по
-           * длительности — иначе длинные фазы съедали квоту и сегментов
-           * выходило заметно меньше нужного.
+           * Ширина сегмента — доля его длительности в общей, поэтому
+           * размер на экране честно отражает длительность фазы.
+           * Цвет сегмента — всегда цвет его типа фазы.
+           *
+           * Две ловушки, из-за которых это раньше ломалось:
+           *
+           * 1. Соседние фазы разных типов нельзя сливать в один
+           *    сегмент: у слитого сегмента цвет приходится выбирать
+           *    «по большинству», и тогда работа (30с) съедала отдых
+           *    (15с) — весь бар становился acid. Поэтому сначала
+           *    склеиваются только соседние фазы ОДНОГО типа (runs).
+           *
+           * 2. Промежутки между сегментами (gap) отбирали у бара
+           *    фиксированные 1px на каждый сегмент — при 40 сегментах
+           *    это 10% ширины, и пропорции уезжали. Промежутков нет:
+           *    ширины сегментов складываются ровно в ширину бара.
+           *
+           * Фаз может быть больше тысячи (100 циклов × 50 сетов), а
+           * дорожек на телефоне влезает ~40. Поэтому runs выше
+           * BAR_MAX_SEGMENTS объединяются в группы, но внутри группы
+           * каждый тип остаётся отдельным куском со своей шириной —
+           * цвет и доли не теряются.
            */
           get barSegments() {
             const seq = this.seq;
@@ -660,47 +668,64 @@ return (
             const total = seq.reduce((a, p) => a + p.duration, 0);
             if (total <= 0) return [];
 
+            // 1. соседние фазы одного типа — один отрезок
+            const runs = [];
+            for (const p of seq) {
+              const last = runs[runs.length - 1];
+              if (last && last.type === p.type) last.duration += p.duration;
+              else runs.push({ type: p.type, duration: p.duration });
+            }
+
+            // 2. слишком много отрезков — объединяем в группы,
+            //    сохраняя внутри каждой куски по типам
             const BAR_MAX_SEGMENTS = 40;
             const groups = [];
-
-            if (seq.length <= BAR_MAX_SEGMENTS) {
-              for (const p of seq) groups.push({ duration: p.duration, type: p.type });
+            if (runs.length <= BAR_MAX_SEGMENTS) {
+              for (const r of runs) groups.push([r]);
             } else {
-              // n фаз в k групп: часть групп на одну фазу больше
               const k = BAR_MAX_SEGMENTS;
-              const base = Math.floor(seq.length / k);
-              const extra = seq.length % k;
+              const base = Math.floor(runs.length / k);
+              const extra = runs.length % k;
               let i = 0;
               for (let g = 0; g < k; g++) {
                 const size = base + (g < extra ? 1 : 0);
-                let duration = 0;
                 const byType = {};
-                for (let n = 0; n < size && i < seq.length; n++, i++) {
-                  duration += seq[i].duration;
-                  byType[seq[i].type] = (byType[seq[i].type] || 0) + seq[i].duration;
+                const order = [];
+                for (let n = 0; n < size && i < runs.length; n++, i++) {
+                  const t = runs[i].type;
+                  if (!(t in byType)) {
+                    byType[t] = 0;
+                    order.push(t);
+                  }
+                  byType[t] += runs[i].duration;
                 }
-                const type = Object.keys(byType).reduce((a, b) =>
-                  byType[b] > byType[a] ? b : a,
-                );
-                groups.push({ duration, type });
+                groups.push(order.map((t) => ({ type: t, duration: byType[t] })));
               }
             }
 
+            // 3. ширина группы и доля заливки каждого куска внутри неё
             const done = this.overallProgress * total;
-            let cum = 0;
-            return groups.map((g) => {
-              const startAt = cum;
-              cum += g.duration;
-              const fill = Math.min(
-                1,
-                Math.max(0, (done - startAt) / g.duration),
-              );
-              return {
-                type: g.type,
-                width: (g.duration / total) * 100,
-                fill: fill * 100,
-              };
-            });
+            let cursor = 0;
+            const out = [];
+            for (const slices of groups) {
+              const groupDuration = slices.reduce((a, s) => a + s.duration, 0);
+              if (groupDuration <= 0) continue;
+              const parts = slices.map((s) => {
+                const start = cursor;
+                cursor += s.duration;
+                return {
+                  type: s.type,
+                  width: (s.duration / groupDuration) * 100,
+                  fill:
+                    Math.min(1, Math.max(0, (done - start) / s.duration)) * 100,
+                };
+              });
+              out.push({
+                width: (groupDuration / total) * 100,
+                parts,
+              });
+            }
+            return out;
           },
 
 
@@ -1103,7 +1128,9 @@ for (let set = 1; set <= n.sets; set++) {
         set,
         cycle: cyc,
       });
-    if (n.rest > 0)
+    // В последнем цикле сета отдыха нет: дальше идёт отдых между
+    // сетами, а после последнего сета — успокоиться или финиш.
+    if (n.rest > 0 && cyc < n.cycles)
       seq.push({
         type: "rest",
         label: "Отдых",

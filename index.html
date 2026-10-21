@@ -1333,6 +1333,89 @@
           </p>
         </div>
 
+        <!-- рост веса 3 дня подряд -> предложить снизить калорийность -->
+        <div
+          x-show="gainDetected"
+          class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-panel/80 px-4 py-3.5 shadow-card"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-ember/[.07] text-ember"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ><use href="#i-alert"/></svg>
+            </span>
+            <div>
+              <p
+                class="text-[13px] font-extrabold text-white leading-tight"
+              >
+                Вес растёт три дня подряд
+              </p>
+              <p class="text-[11.5px] text-slate-400 mt-0.5">
+                Повышение
+                <b
+                  class="text-white font-bold"
+                  x-text="lastCut ? 'после снижения калорийности' : 'от первого замера'"
+                ></b>
+                — скорректируйте норму.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="cutCalories()"
+            class="rounded-xl bg-gradient-to-r from-acid to-mint px-4 py-2.5 text-[12.5px] font-extrabold text-ink hover:opacity-90 active:scale-[.98] transition shadow-glow"
+          >
+            Снизить калорийность на 10%
+          </button>
+        </div>
+
+        <!-- цель достигнута, вес продолжает падать -> добавить калорий -->
+        <div
+          x-show="lossAfterGoal"
+          class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-panel/80 px-4 py-3.5 shadow-card"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ><use href="#i-sliders"/></svg>
+            </span>
+            <div>
+              <p
+                class="text-[13px] font-extrabold text-white leading-tight"
+              >
+                Цель достигнута, вес продолжает падать
+              </p>
+              <p class="text-[11.5px] text-slate-400 mt-0.5">
+                Добавьте калорий, чтобы не терять лишнее.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="addCalories()"
+            class="rounded-xl bg-gradient-to-r from-acid to-mint px-4 py-2.5 text-[12.5px] font-extrabold text-ink hover:opacity-90 active:scale-[.98] transition shadow-glow"
+          >
+            Добавить 5% к калорийности
+          </button>
+        </div>
+
         <div
           class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"
         >
@@ -2581,6 +2664,18 @@
                 <span x-text="fmtTime(elapsedSeconds)"></span> /
                 <span x-text="fmtTime(lastTotal)"></span>
               </div>
+              <div class="flex-1"></div>
+              <!-- Расход: бег в работе, ходьба в паузах -->
+              <div
+                class="flex items-baseline gap-1 text-[13px] tabular-nums"
+                :title="`Расчёт при весе ${fmt(n(cw), 1)} кг: работа — умеренный бег, паузы — ходьба`"
+              >
+                <span
+                  class="text-base font-bold text-acid"
+                  x-text="fmt(kcalBurned, 0)"
+                ></span>
+                <span class="text-slate-400">ккал</span>
+              </div>
             </div>
           </div>
 
@@ -2599,6 +2694,11 @@
               Тренировка на
               <span class="tabular-nums" x-text="fmtTime(lastTotal)"></span>
               завершена
+            </p>
+            <p class="mt-2 text-sm text-slate-400">
+              Сожжено
+              <span class="font-bold text-acid tabular-nums" x-text="fmt(kcalBurned, 0)"></span>
+              ккал
             </p>
             <div class="mt-6 flex w-full max-w-xs flex-col gap-2.5">
               <button

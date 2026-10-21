@@ -1,0 +1,14 @@
+{
+  "appId": "com.westtrade.fatlosscalc",
+  "appName": "FATLOSS·CALC",
+  "webDir": "www",
+  "backgroundColor": "#070b09",
+  "android": {
+    "backgroundColor": "#070b09"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  }
+}

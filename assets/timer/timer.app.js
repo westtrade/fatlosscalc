@@ -11,6 +11,11 @@
     const RING_R = 90, RING_C = 2 * Math.PI * RING_R;
     const LP_R = 95, LP_C = 2 * Math.PI * LP_R;
 
+    // Расход: работа — умеренный бег, все паузы — ходьба.
+    // ккал/мин = MET × 3,5 × вес(кг) / 200
+    const MET_RUN = 9;
+    const MET_WALK = 3.5;
+
     return {
 
 
@@ -188,6 +193,13 @@
 
 
           countdownAnnounced: 0,
+
+
+          /* ── Расход калорий: миллисекунды по типу фазы ── */
+          kcalRunMs: 0,
+
+
+          kcalWalkMs: 0,
 
 
 
@@ -525,6 +537,14 @@ return Math.max(0, Math.ceil(this.remaining / 1000));
           },
 
 
+          get kcalBurned() {
+const kg = this.n(this.cw);
+if (!kg) return 0;
+const perMin = (MET_RUN * this.kcalRunMs + MET_WALK * this.kcalWalkMs) / 60000;
+return (perMin * 3.5 * kg) / 200;
+          },
+
+
           get elapsedSeconds() {
 return Math.max(0, this.lastTotal - this.remainingTotal());
           },
@@ -748,6 +768,8 @@ this.remaining = seq[0].duration * 1000;
 this.lastTotal = seq.reduce((a, p) => a + p.duration, 0);
 this.paused = false;
 this.countdownAnnounced = 0;
+this.kcalRunMs = 0;
+this.kcalWalkMs = 0;
 this.lastTick = performance.now();
 
 this.unlockAudio();
@@ -782,6 +804,15 @@ if (dt < 0 || dt > 2000) dt = 100;
 
 const beforeRemaining = this.remaining;
 this.remaining -= dt;
+
+// Расход считаем по фазе, в которой прошёл тик:
+// работа — умеренный бег, все паузы — ходьба.
+const phase = this.current;
+if (phase) {
+  const ms = Math.min(dt, Math.max(0, beforeRemaining));
+  if (phase.type === "work") this.kcalRunMs += ms;
+  else this.kcalWalkMs += ms;
+}
 
 // Отсчёт последних 3 секунд
 const secNow = Math.ceil(Math.max(0, this.remaining) / 1000);

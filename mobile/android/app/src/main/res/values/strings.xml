@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FATLOSS·CALC</string>
+    <string name="title_activity_main">FATLOSS·CALC</string>
+    <string name="package_name">com.westtrade.fatlosscalc</string>
+    <string name="custom_url_scheme">com.westtrade.fatlosscalc</string>
+</resources>

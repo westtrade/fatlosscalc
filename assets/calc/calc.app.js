@@ -77,6 +77,13 @@ histDate: null,
 
 HIST_MAX: 500,
 
+calCut: 1,
+
+ // множитель нормы калорий: 1 = базовая, <1 — после снижения, >1 — после добавки
+lastCut: null,
+
+ // 'YYYY-MM-DD' последнего снижения калорийности — якорь для детекции роста
+
 
 
 /* ---------- constants ---------- */
@@ -189,7 +196,7 @@ get twEff() {
 
 /* ---------- live formulas ---------- */
 get tCal() {
-  return num(this.cw) * 25;
+  return num(this.cw) * 25 * this.calCut;
 },
 
 
@@ -1087,18 +1094,33 @@ loadSaved() {
       ? data.dietId
       : null;
 
+  // снижение калорийности: множитель нормы и дата последнего снижения
+  const calCutRaw = parseFloat(data.calCut);
+  const calCut =
+    Number.isFinite(calCutRaw) && calCutRaw > 0 && calCutRaw <= 2
+      ? Math.round(calCutRaw * 100) / 100
+      : null;
+  const lastCut =
+    typeof data.lastCut === "string" && this.parseISO(data.lastCut)
+      ? data.lastCut
+      : null;
+
   if (cw !== null) this.cw = cw;
   if (tw !== null) this.tw = tw;
   if (height !== null) this.height = height;
   if (mode !== null) this.mode = mode;
   if (dietId !== null) this.dietId = dietId;
+  if (calCut !== null) this.calCut = calCut;
+  if (lastCut !== null) this.lastCut = lastCut;
 
   const restored =
     cw !== null ||
     tw !== null ||
     height !== null ||
     mode !== null ||
-    dietId !== null;
+    dietId !== null ||
+    calCut !== null ||
+    lastCut !== null;
   // ни одно поле не пригодилось — хранить это незачем
   if (!restored) this.clearSaved();
   return restored;
@@ -1116,6 +1138,8 @@ save() {
     height: num(this.height),
     mode: this.mode === "bmi" ? "bmi" : "manual",
     dietId: this.dietId,
+    calCut: this.calCut,
+    lastCut: this.lastCut,
     ts: Date.now(),
   };
   try {
@@ -1376,6 +1400,63 @@ get histCards() {
 
 
 
+/* ---------- детекция роста веса ----------
+   # ponytail: серия считается по записям, а не по календарным дням —
+   при редких замерах «3 дня» растягиваются. Если понадобится точность
+   по датам, считать дни между h[0] и h[n-1] серии. */
+get gainDetected() {
+  const h = this.history;
+  // нужно минимум 3 записи после якоря, чтобы говорить о трёх днях роста
+  if (h.length < 3) return false;
+  // якорь: первая запись после последнего снижения калорийности,
+  // иначе — самый первый замер (либо от первого замера, либо от снижения)
+  const anchorDate = this.lastCut || h[0].d;
+  let i = 0;
+  while (i < h.length && h[i].d < anchorDate) i++;
+  if (h.length - i < 3) return false;
+  const base = h[i].w;
+  // сколько самых свежих записей подряд выше якоря
+  let streak = 0;
+  for (let j = h.length - 1; j >= i && h[j].w > base; j--) streak++;
+  return streak >= 3;
+},
+
+cutCalories() {
+  // каждое нажатие снимает ещё 10% от текущей нормы
+  this.calCut = Math.round(this.calCut * 0.9 * 100) / 100;
+  this.lastCut = this.todayISO();
+  this.queueSave();
+  this.kick();
+  this.showToast(
+    `Калорийность снижена на 10% — норма теперь ${this.fmt(this.tCal, 0)} ккал`,
+  );
+},
+
+/* ---------- детекция падения после достижения цели ---------- */
+get lossAfterGoal() {
+  const h = this.history;
+  // нужно минимум 3 падения подряд, т.е. 4 записи
+  if (h.length < 4) return false;
+  const goal = this.valid ? this.twEff : null;
+  if (goal === null || !Number.isFinite(goal)) return false;
+  // цель ещё не достигнута — кнопка не нужна
+  if (h[h.length - 1].w > goal) return false;
+  // сколько самых свежих записей подряд строго ниже предыдущей
+  let streak = 0;
+  for (let j = h.length - 1; j > 0 && h[j].w < h[j - 1].w; j--) streak++;
+  return streak >= 3;
+},
+
+addCalories() {
+  // каждое нажатие добавляет 5% к текущей норме
+  this.calCut = Math.round(this.calCut * 1.05 * 100) / 100;
+  this.queueSave();
+  this.kick();
+  this.showToast(
+    `Калорийность повышена на 5% — норма теперь ${this.fmt(this.tCal, 0)} ккал`,
+  );
+},
+
 /* ---------- chart geometry (viewBox 720×240) ---------- */
 get chart() {
   const W = 720,
@@ -1550,7 +1631,7 @@ copyResult() {
 Цель: ${goal}
 Норма ИМТ (18,5–24,9) для вашего роста: ${this.fmt(this.bmiWeight(18.5), 1)}–${this.fmt(this.bmiWeight(24.9), 1)} кг
 
-• Калории:   ${this.fmt(this.tCal, 0)} ккал  (вес × 25)
+• Калории:   ${this.fmt(this.tCal, 0)} ккал  (вес × 25${this.calCut !== 1 ? " × " + this.fmt(this.calCut, 2) : ""})
 • Белки:     ${this.fmt(this.tPro, 0)} г     (цель × 2)
 • Жиры:      ${this.fmt(this.tFat, 1)} г     (вес × 0,7)
 • Углеводы:  ${this.fmt(this.tCarb, 0)} г    ((ккал − вес×13) ÷ 4)

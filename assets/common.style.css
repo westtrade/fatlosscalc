@@ -7,6 +7,9 @@
         scroll-behavior: smooth;
       }
       body {
+        /* В WebView (APK) страница edge-to-edge: без этого заголовок уезжает
+           под статус-бар. В браузере inset = 0, вид не меняется. */
+        padding-top: env(safe-area-inset-top, 0px);
         background-color: #070b09;
         background-image:
           radial-gradient(

@@ -216,6 +216,127 @@ const silent = (c) => {
   c.calCut = 1.1;
   c.cutCalories();
   check("снижение от 1,1 -> 0,99", c.calCut === 0.99, String(c.calCut));
+  check("снижение ставит якорь lastCalChange", typeof c.lastCalChange === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.lastCalChange));
+}
+
+/* ===== медленное снижение (slowLossDetected) ===== */
+
+const withGoal = (c, goal = 80) => {
+  c.tw = goal;
+  c.mode = "manual";
+};
+
+/* 15. Месячный темп ниже нормы (<2%) при снижении -> кнопка. */
+{
+  const c = makeCalc();
+  withGoal(c);
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-02", 99.95],
+    ["2026-01-03", 99.9],
+    ["2026-01-04", 99.9],
+  );
+  // падение 0,1 кг за 3 дня = 0,1% -> ~1% в месяц < 2%
+  check("медленное снижение", c.slowLossDetected === true);
+}
+
+/* 16. Темп в норме (2–4% в месяц) — кнопки нет. */
+{
+  const c = makeCalc();
+  withGoal(c);
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-02", 99.9],
+    ["2026-01-03", 99.8],
+    ["2026-01-04", 99.7],
+  );
+  // 0,3% за 3 дня -> ~3% в месяц — норма
+  check("нормальный темп", c.slowLossDetected === false);
+}
+
+/* 17. Нет снижения (рост/плато) — кнопки нет. */
+{
+  const c = makeCalc();
+  withGoal(c);
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-02", 100],
+    ["2026-01-03", 100.2],
+    ["2026-01-04", 100.3],
+  );
+  check("рост веса", c.slowLossDetected === false);
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-02", 100],
+    ["2026-01-03", 100],
+    ["2026-01-04", 100],
+  );
+  check("плато", c.slowLossDetected === false);
+}
+
+/* 18. Меньше трёх записей после якоря — кнопки нет. */
+{
+  const c = makeCalc();
+  withGoal(c);
+  c.history = hist(["2026-01-01", 100], ["2026-01-02", 99.9]);
+  check("две записи", c.slowLossDetected === false);
+}
+
+/* 19. Якорь — последняя корректировка калорийности (в любую сторону). */
+{
+  const c = makeCalc();
+  withGoal(c);
+  c.lastCalChange = "2026-01-10";
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-10", 95],
+    ["2026-01-11", 94.95],
+    ["2026-01-13", 94.9],
+  );
+  // от 95 до 94,9 за 3 дня = 0,105% -> ~1% в месяц < 2%
+  check("после корректировки калорийности", c.slowLossDetected === true);
+}
+
+/* 20. Цель достигнута — кнопка медленного снижения не нужна. */
+{
+  const c = makeCalc();
+  withGoal(c, 100);
+  c.history = hist(
+    ["2026-01-01", 101],
+    ["2026-01-02", 100.9],
+    ["2026-01-03", 100.8],
+    ["2026-01-04", 100.7],
+  );
+  check("цель достигнута", c.slowLossDetected === false);
+}
+
+/* 21. Без цели — кнопки нет. */
+{
+  const c = makeCalc();
+  c.tw = 0;
+  c.mode = "manual";
+  c.history = hist(
+    ["2026-01-01", 100],
+    ["2026-01-02", 99.95],
+    ["2026-01-03", 99.9],
+    ["2026-01-04", 99.9],
+  );
+  check("цель не задана", c.slowLossDetected === false);
+}
+
+/* 22. Мягкое снижение на 5%: множитель 0,95 и якоря обновляются. */
+{
+  const c = makeCalc();
+  silent(c);
+  c.cw = 100;
+  c.calCut = 1;
+  c.trimCalories();
+  check("множитель 0,95", c.calCut === 0.95, String(c.calCut));
+  check("норма снижена на 5%", c.tCal === 2375, String(c.tCal));
+  check("якорь lastCut = сегодня", typeof c.lastCut === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.lastCut));
+  check("якорь lastCalChange = сегодня", typeof c.lastCalChange === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.lastCalChange));
+  c.trimCalories();
+  check("повторное снижение 0,9", c.calCut === 0.9, String(c.calCut));
 }
 
 console.log(failed ? `\n${failed} проверок упало` : "\nвсе проверки прошли");

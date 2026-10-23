@@ -11,8 +11,10 @@ Capacitor кладёт `www/` в `android/app/src/main/assets/public` и отк�
 ./build.sh         # → debug APK, без v1-подписи
 ```
 
-`build.sh` требует: JDK 21, Android SDK (platform 36, build-tools 36.0.0),
-Gradle 8.14.3. Пути к ним — в переменных в начале скрипта.
+`sign.sh` и `build.sh` требуют JDK 21, Android SDK (platform 36, build-tools
+36.0.0 и 35.0.0 — вторая нужна AGP 8.13), Gradle 8.14.3. Тулчейн ищется в
+`~/android-build`, другой путь задаётся переменной `ANDROID_TOOLCHAIN`;
+все пути собраны в `env.sh`.
 
 ## Что меняется в приложении
 

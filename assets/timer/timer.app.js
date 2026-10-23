@@ -472,6 +472,22 @@ if (n.cooldown > 0) c++;
 return c;
           },
 
+          // Оценка расхода за тренировку по настройкам таймера
+          // (без подготовки и успокоения). Совпадает с план-частью workoutKcal.
+          kcalFor(t) {
+const kg = this.n(this.cw);
+if (!kg) return 0;
+const n = this.norm(t.settings);
+const runMs = n.sets * n.cycles * n.work * 1000;
+const walkMs =
+  (n.sets * Math.max(0, n.cycles - 1) * n.rest +
+    Math.max(0, n.sets - 1) * n.setRest) *
+  1000;
+return (
+  ((MET_RUN * runMs + MET_WALK * walkMs) / 60000) * 3.5 * kg / 200
+);
+          },
+
 
 
           numsSummary(t) {
@@ -542,6 +558,34 @@ const kg = this.n(this.cw);
 if (!kg) return 0;
 const perMin = (MET_RUN * this.kcalRunMs + MET_WALK * this.kcalWalkMs) / 60000;
 return (perMin * 3.5 * kg) / 200;
+          },
+
+          get workoutKcal() {
+            // Расход за всю тренировку: уже пройденное берём по факту,
+            // оставшееся — по плану. Подготовка и успокоение не считаются,
+            // пропущенные интервалы (skip) сразу уменьшают оценку.
+            const kg = this.n(this.cw);
+            if (!kg) return 0;
+            let runMs = this.kcalRunMs,
+              walkMs = this.kcalWalkMs;
+            if (!this.finished && this.seq.length) {
+              for (let i = this.idx; i < this.seq.length; i++) {
+                const p = this.seq[i];
+                const remainMs =
+                  i === this.idx
+                    ? Math.max(0, this.remaining)
+                    : p.duration * 1000;
+                if (p.type === "work") runMs += remainMs;
+                else if (p.type === "rest" || p.type === "setrest")
+                  walkMs += remainMs;
+              }
+            }
+            return (
+              ((MET_RUN * runMs + MET_WALK * walkMs) / 60000) *
+              3.5 *
+              kg /
+              200
+            );
           },
 
 
@@ -810,8 +854,10 @@ this.remaining -= dt;
 const phase = this.current;
 if (phase) {
   const ms = Math.min(dt, Math.max(0, beforeRemaining));
+  // подготовка и успокоение в расход не идут, паузы — ходьба
   if (phase.type === "work") this.kcalRunMs += ms;
-  else this.kcalWalkMs += ms;
+  else if (phase.type === "rest" || phase.type === "setrest")
+    this.kcalWalkMs += ms;
 }
 
 // Отсчёт последних 3 секунд

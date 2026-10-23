@@ -17,7 +17,7 @@ mkdir -p "$GRADLE_USER_HOME" "$TMPDIR"
 export PATH="$ANDROID_HOME/platform-tools:$PATH"
 
 # JDK 21 ищем в тулчейне, иначе берём системный и проверяем версию.
-JDK21="$(find "$TC/jdk" -maxdepth 2 -name "java" -type f -path "*/bin/java" 2>/dev/null | head -1)"
+JDK21="$(find "$TC/jdk" -maxdepth 4 -path "*/bin/java" \( -type f -o -type l \) 2>/dev/null | head -1)"
 if [ -n "$JDK21" ]; then
   export JAVA_HOME="$(dirname "$(dirname "$JDK21")")"
 else

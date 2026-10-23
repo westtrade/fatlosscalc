@@ -147,5 +147,124 @@ const check = (name, ok, detail) => {
   check("вес 0 -> 0 ккал", t.kcalBurned === 0, String(t.kcalBurned));
 }
 
+/* 5. Подготовка и успокоение в расход не идут: считаются только
+      работа (бег) и отдых (ходьба). */
+{
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [
+      { type: "prep", duration: 10 },
+      { type: "work", duration: 30 },
+      { type: "rest", duration: 15 },
+      { type: "cooldown", duration: 30 },
+    ],
+    idx: 0,
+    remaining: 10000,
+    paused: false,
+    finished: false,
+    countdownAnnounced: 0,
+    kcalRunMs: 0,
+    kcalWalkMs: 0,
+  });
+  fakeNow = 0;
+  t.lastTick = 0;
+  for (let i = 0; i < 900; i++) {
+    fakeNow += 100;
+    t.tick();
+    if (t.finished) break;
+  }
+  check("работа учтена целиком", Math.abs(t.kcalRunMs - 30000) <= 200, `${t.kcalRunMs} мс`);
+  check("отдых учтён целиком", Math.abs(t.kcalWalkMs - 15000) <= 200, `${t.kcalWalkMs} мс`);
+  const exp = ((9 * 30000 + 3.5 * 15000) / 60000) * 3.5 * 88 / 200;
+  check(
+    "расход без подготовки/успокоения",
+    Math.abs(t.kcalBurned - exp) < 0.05,
+    `${t.kcalBurned.toFixed(3)} из ${exp.toFixed(3)}`,
+  );
+  check("на финише оценка = фактическому расходу", Math.abs(t.workoutKcal - t.kcalBurned) < 0.05);
+}
+
+/* 6. Оценка за тренировку: весь план минус подготовка/успокоение. */
+{
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [
+      { type: "prep", duration: 10 },
+      { type: "work", duration: 30 },
+      { type: "rest", duration: 15 },
+      { type: "work", duration: 30 },
+      { type: "cooldown", duration: 30 },
+    ],
+    idx: 0,
+    remaining: 10000,
+    finished: false,
+    kcalRunMs: 0,
+    kcalWalkMs: 0,
+  });
+  const exp = ((9 * 60000 + 3.5 * 15000) / 60000) * 3.5 * 88 / 200;
+  check("оценка всей тренировки", Math.abs(t.workoutKcal - exp) < 0.01, `${t.workoutKcal} из ${exp}`);
+}
+
+/* 7. Пропуск интервала уменьшает оценку за тренировку. */
+{
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [
+      { type: "work", duration: 30 },
+      { type: "rest", duration: 15 },
+      { type: "work", duration: 30 },
+    ],
+    idx: 0,
+    remaining: 30000,
+    finished: false,
+    kcalRunMs: 0,
+    kcalWalkMs: 0,
+  });
+  const full = ((9 * 60000 + 3.5 * 15000) / 60000) * 3.5 * 88 / 200;
+  check("полный план = оценка целиком", Math.abs(t.workoutKcal - full) < 0.01, `${t.workoutKcal} из ${full}`);
+  // пропускаем отдых: idx 1 -> 2, остаётся только вторая работа
+  t.idx = 2;
+  t.remaining = 30000;
+  const skipped = (9 * 30000 / 60000) * 3.5 * 88 / 200;
+  check("после пропуска оценка ниже", t.workoutKcal < full - 0.5, `skip ${t.workoutKcal}, full ${full}`);
+  check("после пропуска = только работа", Math.abs(t.workoutKcal - skipped) < 0.01, `${t.workoutKcal} из ${skipped}`);
+}
+
+/* 8. Оценка по настройкам таймера (kcalFor): только работа и отдых,
+      без подготовки и успокоения, и совпадает с планом последовательности. */
+{
+  const t = makeTimer();
+  const settings = {
+    prep: 10,
+    work: 30,
+    rest: 15,
+    cycles: 8,
+    sets: 3,
+    setRest: 60,
+    cooldown: 30,
+  };
+  const timer = { id: "t1", settings };
+  const exp = ((9 * 720000 + 3.5 * 435000) / 60000) * 3.5 * 88 / 200;
+  check("kcalFor: дефолтный план", Math.abs(t.kcalFor(timer) - exp) < 0.01, `${t.kcalFor(timer)} из ${exp}`);
+
+  const n = t.norm(settings);
+  const seq = t.buildSequence(n);
+  let runMs = 0, walkMs = 0;
+  for (const p of seq) {
+    if (p.type === "work") runMs += p.duration * 1000;
+    else if (p.type === "rest" || p.type === "setrest") walkMs += p.duration * 1000;
+  }
+  const expSeq = ((9 * runMs + 3.5 * walkMs) / 60000) * 3.5 * 88 / 200;
+  check("kcalFor = плану последовательности", Math.abs(t.kcalFor(timer) - expSeq) < 0.01, `${t.kcalFor(timer)} из ${expSeq}`);
+
+  // подготовка и успокоение на оценку не влияют
+  timer.settings = { prep: 300, work: 30, rest: 0, cycles: 1, sets: 1, setRest: 0, cooldown: 300 };
+  const exp2 = (9 * 30000 / 60000) * 3.5 * 88 / 200;
+  check("kcalFor: без подготовки/успокоения", Math.abs(t.kcalFor(timer) - exp2) < 0.01, `${t.kcalFor(timer)} из ${exp2}`);
+}
+
 console.log(failed ? `\n${failed} проверок упало` : "\nвсе проверки прошли");
 process.exit(failed ? 1 : 0);

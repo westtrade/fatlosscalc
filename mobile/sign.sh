@@ -19,5 +19,8 @@ npx cap sync android
   --out fatlosscalc.apk \
   android/app/build/outputs/apk/release/app-release.apk
 
-"$BT/apksigner" verify -v fatlosscalc.apk | head -4
+# Проверяем именно с min-sdk 21: при 24+ apksigner не смотрит на v1 и
+# рапортует «v1: false», хотя подпись в APK есть.
+"$BT/apksigner" verify -v --min-sdk-version 21 fatlosscalc.apk | head -4
+rm -f fatlosscalc.apk.idsig
 echo "APK: $(pwd)/fatlosscalc.apk ($(du -h fatlosscalc.apk | cut -f1))"

@@ -1377,6 +1377,46 @@
           </button>
         </div>
 
+        <!-- снижение есть, но темп ниже нормы -> мягко понизить калорийность -->
+        <div
+          x-show="slowLossDetected"
+          class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-panel/80 px-4 py-3.5 shadow-card"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky/10 text-sky"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ><use href="#i-chart-line"/></svg>
+            </span>
+            <div>
+              <p
+                class="text-[13px] font-extrabold text-white leading-tight"
+              >
+                Вес снижается медленно
+              </p>
+              <p class="text-[11.5px] text-slate-400 mt-0.5">
+                Месячный темп ниже нормы (2–4%) — слегка снизьте
+                калорийность.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="trimCalories()"
+            class="rounded-xl bg-gradient-to-r from-sky to-mint px-4 py-2.5 text-[12.5px] font-extrabold text-ink hover:opacity-90 active:scale-[.98] transition shadow-glow"
+          >
+            Понизить калорийность на 5%
+          </button>
+        </div>
+
         <!-- цель достигнута, вес продолжает падать -> добавить калорий -->
         <div
           x-show="lossAfterGoal"
@@ -2270,6 +2310,10 @@
                       >
                       <span>·</span>
                       <span x-text="numsSummary(t)"></span>
+                      <span>·</span>
+                      <span class="tabular-nums text-acid">
+                        ≈<span x-text="fmt(kcalFor(t), 0)"></span> ккал
+                      </span>
                     </div>
                   </div>
 
@@ -2394,6 +2438,20 @@
                             </div>
                           </div>
                         </template>
+                      </div>
+
+                      <div
+                        class="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-line bg-panel/60 px-3 py-2.5"
+                      >
+                        <span
+                          class="text-[11px] font-medium uppercase tracking-wider text-slate-500"
+                          >Расход за тренировку</span
+                        >
+                        <span
+                          class="text-sm font-bold text-acid tabular-nums"
+                        >
+                          ≈<span x-text="fmt(kcalFor(t), 0)"></span> ккал
+                        </span>
                       </div>
 
                       <p
@@ -2665,17 +2723,19 @@
                 <span x-text="fmtTime(lastTotal)"></span>
               </div>
               <div class="flex-1"></div>
-              <!-- Расход: бег в работе, ходьба в паузах -->
-              <div
-                class="flex items-baseline gap-1 text-[13px] tabular-nums"
-                :title="`Расчёт при весе ${fmt(n(cw), 1)} кг: работа — умеренный бег, паузы — ходьба`"
-              >
-                <span
-                  class="text-base font-bold text-acid"
-                  x-text="fmt(kcalBurned, 0)"
-                ></span>
-                <span class="text-slate-400">ккал</span>
-              </div>
+            </div>
+
+            <!-- Оценка расхода за всю тренировку (без подготовки и успокоения) -->
+            <div
+              class="mt-3 text-[12.5px] text-slate-400"
+              :title="`Расчёт при весе ${fmt(n(cw), 1)} кг: работа — умеренный бег, паузы — ходьба`"
+            >
+              За тренировку вы потеряете
+              <span
+                class="font-bold text-acid tabular-nums"
+                x-text="fmt(workoutKcal, 0)"
+              ></span>
+              ккал
             </div>
           </div>
 
@@ -2696,7 +2756,7 @@
               завершена
             </p>
             <p class="mt-2 text-sm text-slate-400">
-              Сожжено
+              Вы потратили
               <span class="font-bold text-acid tabular-nums" x-text="fmt(kcalBurned, 0)"></span>
               ккал
             </p>

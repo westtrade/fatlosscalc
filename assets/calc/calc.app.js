@@ -83,6 +83,9 @@ calCut: 1,
 lastCut: null,
 
  // 'YYYY-MM-DD' последнего снижения калорийности — якорь для детекции роста
+lastCalChange: null,
+
+ // 'YYYY-MM-DD' последней корректировки калорийности (в любую сторону)
 
 
 
@@ -1104,6 +1107,10 @@ loadSaved() {
     typeof data.lastCut === "string" && this.parseISO(data.lastCut)
       ? data.lastCut
       : null;
+  const lastCalChange =
+    typeof data.lastCalChange === "string" && this.parseISO(data.lastCalChange)
+      ? data.lastCalChange
+      : null;
 
   if (cw !== null) this.cw = cw;
   if (tw !== null) this.tw = tw;
@@ -1112,6 +1119,7 @@ loadSaved() {
   if (dietId !== null) this.dietId = dietId;
   if (calCut !== null) this.calCut = calCut;
   if (lastCut !== null) this.lastCut = lastCut;
+  if (lastCalChange !== null) this.lastCalChange = lastCalChange;
 
   const restored =
     cw !== null ||
@@ -1120,7 +1128,8 @@ loadSaved() {
     mode !== null ||
     dietId !== null ||
     calCut !== null ||
-    lastCut !== null;
+    lastCut !== null ||
+    lastCalChange !== null;
   // ни одно поле не пригодилось — хранить это незачем
   if (!restored) this.clearSaved();
   return restored;
@@ -1140,6 +1149,7 @@ save() {
     dietId: this.dietId,
     calCut: this.calCut,
     lastCut: this.lastCut,
+    lastCalChange: this.lastCalChange,
     ts: Date.now(),
   };
   try {
@@ -1425,6 +1435,7 @@ cutCalories() {
   // каждое нажатие снимает ещё 10% от текущей нормы
   this.calCut = Math.round(this.calCut * 0.9 * 100) / 100;
   this.lastCut = this.todayISO();
+  this.lastCalChange = this.todayISO();
   this.queueSave();
   this.kick();
   this.showToast(
@@ -1450,10 +1461,56 @@ get lossAfterGoal() {
 addCalories() {
   // каждое нажатие добавляет 5% к текущей норме
   this.calCut = Math.round(this.calCut * 1.05 * 100) / 100;
+  this.lastCalChange = this.todayISO();
   this.queueSave();
   this.kick();
   this.showToast(
     `Калорийность повышена на 5% — норма теперь ${this.fmt(this.tCal, 0)} ккал`,
+  );
+},
+
+/* ---------- детекция «незначительного» снижения веса ---------- */
+daysBetween(a, b) {
+  const da = this.parseISO(a),
+    db = this.parseISO(b);
+  if (!da || !db) return 0;
+  return Math.max(1, Math.round((db - da) / 86400000));
+},
+
+get slowLossDetected() {
+  const h = this.history;
+  // нужны минимум 3 записи после якоря (три дня взвешиваний)
+  if (h.length < 3) return false;
+  const goal = this.valid ? this.twEff : null;
+  if (goal === null || !Number.isFinite(goal)) return false;
+  // якорь: начало взвешиваний или последняя корректировка калорийности
+  // (# ponytail: серия по записям, не по календарным дням)
+  const anchorDate = this.lastCalChange || h[0].d;
+  let i = 0;
+  while (i < h.length && h[i].d < anchorDate) i++;
+  if (h.length - i < 3) return false;
+  const base = h[i].w;
+  const lastEntry = h[h.length - 1];
+  const latest = lastEntry.w;
+  // нужно именно снижение; цель уже достигнута — там своя кнопка (+5%)
+  if (latest >= base || latest <= goal) return false;
+  // месячная проекция темпа: норма 0,5–1% в неделю = 2–4% в месяц.
+  // Ниже 2% — «незначительное» снижение: предлагаем мягко докрутить.
+  const daily =
+    (base - latest) / base / this.daysBetween(h[i].d, lastEntry.d);
+  // месячный темп как доля от веса: норма 2–4% = 0,02–0,04
+  return daily * 30 < 0.02;
+},
+
+trimCalories() {
+  // мягкое снижение: 5% (половина агрессивных 10% при росте веса)
+  this.calCut = Math.round(this.calCut * 0.95 * 100) / 100;
+  this.lastCut = this.todayISO();
+  this.lastCalChange = this.todayISO();
+  this.queueSave();
+  this.kick();
+  this.showToast(
+    `Калорийность снижена на 5% — норма теперь ${this.fmt(this.tCal, 0)} ккал`,
   );
 },
 

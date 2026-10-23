@@ -8,3 +8,4 @@ android/app/build/
 # ключи и артефакты подписи
 keystore/
 *.apk
+*.apk.idsig

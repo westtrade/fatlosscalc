@@ -194,6 +194,14 @@
 
           countdownAnnounced: 0,
 
+          timerView: "timers",
+
+          activityHistory: [],
+
+          elapsedMs: 0,
+
+          ACT_HIST_KEY: "itimer.activity.v1",
+
 
           /* ── Расход калорий: миллисекунды по типу фазы ── */
           kcalRunMs: 0,
@@ -272,6 +280,7 @@ if (!this.timers.length) {
 }
 
 this.$watch("timers", () => this.persist(), { deep: true });
+this.loadActivity();
 
 window.addEventListener("keydown", this.onKeydown.bind(this));
 window.addEventListener("visibilitychange", () => {
@@ -792,6 +801,53 @@ return (
             return out;
           },
 
+          /* ═══════════ ИСТОРИЯ АКТИВНОСТИ ═══════════ */
+          loadActivity() {
+try {
+  const raw = localStorage.getItem(this.ACT_HIST_KEY);
+  if (raw) {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr))
+      this.activityHistory = arr
+        .filter((e) => e && typeof e === "object" && Number.isFinite(e.ts))
+        .slice(0, 200);
+  }
+} catch (e) {}
+          },
+
+          saveActivity() {
+try {
+  localStorage.setItem(
+    this.ACT_HIST_KEY,
+    JSON.stringify(this.activityHistory.slice(0, 200)),
+  );
+} catch (e) {}
+          },
+
+          recordActivity() {
+const t = this.activeTimer;
+const entry = {
+  ts: Date.now(),
+  name: t ? t.name : "Тренировка",
+  sec: Math.max(1, Math.round(this.elapsedMs / 1000)),
+  kcal: Math.round(this.kcalBurned),
+};
+this.activityHistory = [entry, ...this.activityHistory].slice(0, 200);
+this.saveActivity();
+          },
+
+          clearActivity() {
+if (!this.activityHistory.length) return;
+this.activityHistory = [];
+this.saveActivity();
+          },
+
+          actLabel(ts) {
+const d = new Date(ts);
+const p = (x) => String(x).padStart(2, "0");
+return `${p(d.getDate())}.${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+          },
+
 
 
 
@@ -814,6 +870,7 @@ this.paused = false;
 this.countdownAnnounced = 0;
 this.kcalRunMs = 0;
 this.kcalWalkMs = 0;
+this.elapsedMs = 0;
 this.lastTick = performance.now();
 
 this.unlockAudio();
@@ -845,6 +902,7 @@ const now = performance.now();
 let dt = now - this.lastTick;
 this.lastTick = now;
 if (dt < 0 || dt > 2000) dt = 100;
+this.elapsedMs += dt;
 
 const beforeRemaining = this.remaining;
 this.remaining -= dt;
@@ -969,6 +1027,7 @@ this.vibrate(20);
 
 
           finish() {
+this.recordActivity();
 if (this.timerId) clearInterval(this.timerId);
 this.timerId = null;
 this.paused = false;
@@ -1014,11 +1073,14 @@ const snap = {
   lastTotal: this.lastTotal,
 };
 const wasFinished = this.finished;
+const burned = this.kcalBurned;
 
 this.stopTimer();
 
 if (!wasFinished) {
-  this.showUndo("Таймер остановлен", () => {
+  this.showUndo(
+    `Вы потратили ${Math.round(burned).toLocaleString("ru-RU")} ккал`,
+    () => {
     this.activeId = snap.id;
     this.seq = snap.seq;
     this.idx = snap.idx;

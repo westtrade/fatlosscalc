@@ -266,5 +266,50 @@ const check = (name, ok, detail) => {
   check("kcalFor: без подготовки/успокоения", Math.abs(t.kcalFor(timer) - exp2) < 0.01, `${t.kcalFor(timer)} из ${exp2}`);
 }
 
+/* 9. Завершение записывает тренировку в историю активности. */
+{
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [{ type: "work", duration: 30 }],
+    idx: 0,
+    remaining: 30000,
+    finished: false,
+    countdownAnnounced: 0,
+    elapsedMs: 30000,
+    kcalRunMs: 30000,
+    kcalWalkMs: 0,
+  });
+  t.finish();
+  check("завершение записывает в историю", t.activityHistory.length === 1, String(t.activityHistory.length));
+  const e = t.activityHistory[0];
+  check("запись: ккал по факту", e.kcal === 7, String(e.kcal));
+  check("запись: реальное время", e.sec === 30, String(e.sec));
+}
+
+/* 10. Стоп с undo показывает тост с потраченными калориями. */
+{
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [{ type: "work", duration: 30 }],
+    idx: 0,
+    remaining: 15000,
+    paused: false,
+    finished: false,
+    lastTotal: 30,
+    elapsedMs: 15000,
+    kcalRunMs: 15000,
+    kcalWalkMs: 0,
+  });
+  t.stopTimerWithUndo();
+  check(
+    "тост стопа содержит калории",
+    !!t.undo && t.undo.label.indexOf("Вы потратили") === 0 && /ккал/.test(t.undo.label),
+    t.undo ? t.undo.label : "(нет тоста)",
+  );
+  check("стоп не пишет в историю", t.activityHistory.length === 0);
+}
+
 console.log(failed ? `\n${failed} проверок упало` : "\nвсе проверки прошли");
 process.exit(failed ? 1 : 0);

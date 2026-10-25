@@ -9,3 +9,4 @@ android/app/build/
 keystore/
 *.apk
 *.apk.idsig
+.gradle-home/

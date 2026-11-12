@@ -311,5 +311,91 @@ const check = (name, ok, detail) => {
   check("стоп не пишет в историю", t.activityHistory.length === 0);
 }
 
+/* 11. Промежуточный результат: >50 ккал сохраняется в историю. */
+{
+  const msFor = (kcal) => (kcal * 200 * 60000) / (9 * 3.5 * 88);
+  const t = makeTimer();
+  Object.assign(t, { activeId: "w", elapsedMs: 0, kcalRunMs: msFor(49), kcalWalkMs: 0 });
+  t.checkpoint();
+  check("49 ккал — не сохраняем", t.activityHistory.length === 0, String(t.activityHistory.length));
+
+  t.kcalRunMs = msFor(51);
+  t.elapsedMs = 300000;
+  t.checkpoint();
+  check("51 ккал — сохраняем", t.activityHistory.length === 1, String(t.activityHistory.length));
+  check("запись помечена как промежуточная", t.activityHistory[0].partial === true);
+  check("в записи 51 ккал", t.activityHistory[0].kcal === 51, String(t.activityHistory[0].kcal));
+}
+
+/* 12. Промежуточная запись обновляется, а не дублируется; финиш её же закрывает. */
+{
+  const msFor = (kcal) => (kcal * 200 * 60000) / (9 * 3.5 * 88);
+  const t = makeTimer();
+  Object.assign(t, { activeId: "w", elapsedMs: 300000, kcalRunMs: msFor(51), kcalWalkMs: 0 });
+  t.checkpoint();
+  const ts = t.activityHistory[0].ts;
+
+  // +5 ккал — обновление не нужно (шаг 10)
+  t.kcalRunMs = msFor(56);
+  t.checkpoint();
+  check("шаг 10 ккал: без лишней записи", t.activityHistory.length === 1);
+  check("шаг 10 ккал: значение не изменилось", t.activityHistory[0].kcal === 51);
+
+  // +10 ккал — та же запись обновлена
+  t.kcalRunMs = msFor(61);
+  t.elapsedMs = 360000;
+  t.checkpoint();
+  check("шаг 10 ккал: та же запись", t.activityHistory.length === 1 && t.activityHistory[0].ts === ts);
+  check("шаг 10 ккал: новое значение", t.activityHistory[0].kcal === 61, String(t.activityHistory[0].kcal));
+
+  // финиш закрывает промежуточную запись, второй не появляется
+  t.finish();
+  check("финиш не дублирует запись", t.activityHistory.length === 1, String(t.activityHistory.length));
+  check("финиш снимает флаг partial", !t.activityHistory[0].partial);
+  check("финиш: время обновлено", t.activityHistory[0].sec === 360, String(t.activityHistory[0].sec));
+}
+
+/* 13. Новая тренировка после финиша снова может сохранять промежуточные. */
+{
+  const msFor = (kcal) => (kcal * 200 * 60000) / (9 * 3.5 * 88);
+  const t = makeTimer();
+  Object.assign(t, { activeId: "w", elapsedMs: 300000, kcalRunMs: msFor(60), kcalWalkMs: 0 });
+  t.checkpoint();
+  t.finish();
+  check("после финиша чекпойнт сброшен", t.checkpointTs === null);
+
+  t.kcalRunMs = msFor(60);
+  t.elapsedMs = 300000;
+  t.checkpoint();
+  check("новый чекпойнт — новая запись", t.activityHistory.length === 2, String(t.activityHistory.length));
+}
+
+/* 14. Стоп закрывает промежуточную запись, отмена стопа возвращает её. */
+{
+  const msFor = (kcal) => (kcal * 200 * 60000) / (9 * 3.5 * 88);
+  const t = makeTimer();
+  Object.assign(t, {
+    activeId: "w",
+    seq: [{ type: "work", duration: 600 }],
+    idx: 0,
+    remaining: 300000,
+    paused: false,
+    finished: false,
+    lastTotal: 600,
+    elapsedMs: 300000,
+    kcalRunMs: msFor(60),
+    kcalWalkMs: 0,
+  });
+  t.checkpoint();
+  check("перед стопом запись в процессе", t.activityHistory[0].partial === true);
+
+  t.stopTimerWithUndo();
+  check("стоп закрывает запись", t.activityHistory.length === 1 && !t.activityHistory[0].partial);
+  check("стоп: значение по факту", t.activityHistory[0].kcal === 60, String(t.activityHistory[0].kcal));
+
+  t.applyUndo();
+  check("отмена стопа снова помечает запись", t.activityHistory[0].partial === true);
+}
+
 console.log(failed ? `\n${failed} проверок упало` : "\nвсе проверки прошли");
 process.exit(failed ? 1 : 0);

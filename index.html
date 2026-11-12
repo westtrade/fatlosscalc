@@ -2562,6 +2562,11 @@
                   x-text="a.name"
                 ></span>
                 <span
+                  x-show="a.partial"
+                  class="shrink-0 rounded-md bg-ember/10 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-ember"
+                  >в процессе</span
+                >
+                <span
                   class="num shrink-0 text-[11px] text-slate-500 tabular-nums"
                   x-text="fmtTime(a.sec)"
                 ></span>

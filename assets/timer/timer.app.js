@@ -200,6 +200,12 @@
 
           elapsedMs: 0,
 
+          // промежуточный результат: id записи и сожжённые ккал на момент
+          // последнего сохранения (см. checkpoint())
+          checkpointTs: null,
+
+          checkpointKcal: 0,
+
           ACT_HIST_KEY: "itimer.activity.v1",
 
 
@@ -824,15 +830,48 @@ try {
 } catch (e) {}
           },
 
+          /* Промежуточный результат: как только сожжено больше 50 ккал,
+             пишем запись в историю и обновляем её каждые 10 ккал —
+             прогресс не теряется, если приложение закрыли или упало. */
+          checkpoint() {
+const burned = this.kcalBurned;
+if (burned < 50) return;
+if (this.checkpointTs && burned - this.checkpointKcal < 10) return;
+const t = this.activeTimer;
+const entry = {
+  ts: this.checkpointTs || Date.now(),
+  name: t ? t.name : "Тренировка",
+  sec: Math.max(1, Math.round(this.elapsedMs / 1000)),
+  kcal: Math.round(burned),
+  partial: true,
+};
+this.checkpointKcal = burned;
+if (!this.checkpointTs) {
+  this.checkpointTs = entry.ts;
+  this.activityHistory = [entry, ...this.activityHistory].slice(0, 200);
+} else {
+  this.activityHistory = this.activityHistory.map((e) =>
+    e.ts === entry.ts ? entry : e,
+  );
+}
+this.saveActivity();
+          },
+
           recordActivity() {
 const t = this.activeTimer;
 const entry = {
-  ts: Date.now(),
+  ts: this.checkpointTs || Date.now(),
   name: t ? t.name : "Тренировка",
   sec: Math.max(1, Math.round(this.elapsedMs / 1000)),
   kcal: Math.round(this.kcalBurned),
 };
-this.activityHistory = [entry, ...this.activityHistory].slice(0, 200);
+// завершение дописывает уже сохранённую промежуточную запись,
+// а не плодит вторую
+this.activityHistory = this.checkpointTs
+  ? this.activityHistory.map((e) => (e.ts === entry.ts ? entry : e))
+  : [entry, ...this.activityHistory].slice(0, 200);
+this.checkpointTs = null;
+this.checkpointKcal = 0;
 this.saveActivity();
           },
 
@@ -871,6 +910,8 @@ this.countdownAnnounced = 0;
 this.kcalRunMs = 0;
 this.kcalWalkMs = 0;
 this.elapsedMs = 0;
+this.checkpointTs = null;
+this.checkpointKcal = 0;
 this.lastTick = performance.now();
 
 this.unlockAudio();
@@ -903,6 +944,7 @@ let dt = now - this.lastTick;
 this.lastTick = now;
 if (dt < 0 || dt > 2000) dt = 100;
 this.elapsedMs += dt;
+this.checkpoint();
 
 const beforeRemaining = this.remaining;
 this.remaining -= dt;
@@ -1071,9 +1113,15 @@ const snap = {
   remaining: this.remaining,
   paused: this.paused,
   lastTotal: this.lastTotal,
+  checkpointTs: this.checkpointTs,
+  checkpointKcal: this.checkpointKcal,
 };
 const wasFinished = this.finished;
 const burned = this.kcalBurned;
+
+// остановка закрывает промежуточную запись, чтобы она не висела
+// «в процессе» навсегда (новую не создаём)
+if (!wasFinished && this.checkpointTs) this.recordActivity();
 
 this.stopTimer();
 
@@ -1088,6 +1136,15 @@ if (!wasFinished) {
     this.paused = true;
     this.lastTotal = snap.lastTotal;
     this.lastTick = performance.now();
+    // возвращаем промежуточную запись в состояние «в процессе»
+    if (snap.checkpointTs) {
+      this.checkpointTs = snap.checkpointTs;
+      this.checkpointKcal = snap.checkpointKcal;
+      this.activityHistory = this.activityHistory.map((e) =>
+        e.ts === snap.checkpointTs ? { ...e, partial: true } : e,
+      );
+      this.saveActivity();
+    }
     this.startAnchor();
     this.requestWakeLock();
     if (this.timerId) clearInterval(this.timerId);
